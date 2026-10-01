@@ -24,7 +24,9 @@ import {
   updateNotification,
   updateStudentInboxMessage,
   fetchInboundLogs,
-  fetchPublishers
+  fetchPublishers,
+  simulateAutoLeads,
+  API_BASE
 } from '../lib/api.js';
 import { openModal } from '../components/modal.js';
 
@@ -68,6 +70,10 @@ function fmtDate(value) {
 
 function fmtNumber(value) {
   return new Intl.NumberFormat('en-IN').format(Number(value || 0));
+}
+
+function attrJson(value) {
+  return escapeHtml(JSON.stringify(value || {}, null, 2));
 }
 
 function renderChannelBars(items = []) {
@@ -329,7 +335,12 @@ export async function renderMarketing(el) {
           <article class="chart-card">
             <div class="chart-header">
               <div><h3 class="chart-title">Publisher integrations</h3><span class="chart-subtitle">Direct lead capture from higher-ed publishers</span></div>
-              <button class="btn btn-secondary btn-sm">Add publisher</button>
+              <button class="btn btn-primary btn-sm" id="mk-sync-auto-leads">Sync auto leads</button>
+            </div>
+            <div class="mk-source-summary">
+              <div><strong>${fmtNumber(publishers.reduce((sum, pub) => sum + Number(pub.leads_captured || 0), 0))}</strong><span>Total source leads</span></div>
+              <div><strong>${publishers.filter(pub => pub.status === 'active').length}</strong><span>Active connectors</span></div>
+              <div><strong>${inboundLogs.filter(log => log.status === 'duplicate').length}</strong><span>Duplicates blocked</span></div>
             </div>
             <div class="mk-list">
               ${publishers.map(pub => `
@@ -350,7 +361,7 @@ export async function renderMarketing(el) {
           <article class="chart-card">
             <div class="chart-header">
               <div><h3 class="chart-title">Lead inbound logs</h3><span class="chart-subtitle">Real-time feed of incoming webhook hits</span></div>
-              <button class="btn btn-secondary btn-sm" onclick="refreshPage()">Refresh</button>
+              <button class="btn btn-secondary btn-sm" id="mk-refresh-inbound">Refresh</button>
             </div>
             <div class="ops-table-wrap" style="max-height:300px;overflow-y:auto;">
               <table class="data-table" style="font-size:12px;">
@@ -359,10 +370,10 @@ export async function renderMarketing(el) {
                   ${inboundLogs.length === 0 ? '<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--color-text-muted);">No inbound activity yet</td></tr>' : ''}
                   ${inboundLogs.map(log => `
                     <tr>
-                      <td><strong>${escapeHtml(log.publisher)}</strong></td>
-                      <td><span class="ops-badge ${log.status === 'success' ? 'ok' : 'bad'}">${log.status}</span></td>
-                      <td>${new Date(log.received_at).toLocaleTimeString()}</td>
-                      <td><button class="btn-icon view-payload" data-payload='${escapeHtml(log.payload)}'><i data-lucide="eye" style="width:14px;height:14px;"></i></button></td>
+                      <td><strong>${escapeHtml(log.publisher || log.source || 'Webhook')}</strong><small>${escapeHtml(log.student_name || '')}</small></td>
+                      <td><span class="ops-badge ${log.status === 'captured' ? 'ok' : log.status === 'duplicate' ? 'warn' : 'bad'}">${escapeHtml(log.status)}</span></td>
+                      <td>${new Date(log.received_at).toLocaleTimeString('en-IN')}</td>
+                      <td><button class="btn-icon view-payload" data-payload='${attrJson(log.payload)}' data-reason="${escapeHtml(log.reason || '')}"><i data-lucide="eye" style="width:14px;height:14px;"></i></button></td>
                     </tr>
                   `).join('')}
                 </tbody>
@@ -604,6 +615,23 @@ export async function renderMarketing(el) {
       refreshPage();
     });
 
+    el.querySelector('#mk-refresh-inbound')?.addEventListener('click', refreshPage);
+
+    el.querySelector('#mk-sync-auto-leads')?.addEventListener('click', async () => {
+      const button = el.querySelector('#mk-sync-auto-leads');
+      button.disabled = true;
+      button.textContent = 'Syncing...';
+      try {
+        const result = await simulateAutoLeads(6);
+        alert(`Auto lead sync complete: ${result.created} new, ${result.duplicates} duplicate.`);
+        refreshPage();
+      } catch (err) {
+        alert(`Auto lead sync failed: ${err.message}`);
+        button.disabled = false;
+        button.textContent = 'Sync auto leads';
+      }
+    });
+
     el.querySelectorAll('.mk-launch-campaign').forEach((button) => button.addEventListener('click', async () => {
       await launchMarketingCampaign(button.dataset.id);
       refreshPage();
@@ -717,10 +745,11 @@ export async function renderMarketing(el) {
 
     el.querySelectorAll('.view-payload').forEach(btn => {
       btn.onclick = () => {
-        const payload = JSON.parse(btn.dataset.payload);
+        const reason = btn.dataset.reason;
         openModal('Inbound Webhook Payload', `
+          ${reason ? `<p class="portal-muted" style="margin-bottom:10px;">${escapeHtml(reason)}</p>` : ''}
           <div class="webhook-payload-display" style="padding:1rem;border-radius:8px;font-family:monospace;font-size:12px;overflow-x:auto;white-space:pre-wrap;">
-            ${JSON.stringify(payload, null, 2)}
+            ${escapeHtml(btn.dataset.payload || '{}')}
           </div>
         `, { width: '500px', showFooter: false });
       };

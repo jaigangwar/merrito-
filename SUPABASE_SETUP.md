@@ -1,102 +1,111 @@
-# RBMI Admission Hub Supabase Setup
+# Supabase Production Database Setup Guide
 
-## 1. Put credentials here
+Follow these steps to connect your RBMI CRM to a real Supabase instance.
 
-Write credentials in `merrito-/.env`:
+---
+
+## 🛠️ Step 1: Create your Supabase Project
+
+1. Go to [Supabase](https://supabase.com) and sign in.
+2. Click **New Project** and select your organization.
+3. Configure:
+   - **Name:** `RBMI Admission Hub`
+   - **Database Password:** (Create a strong password and save it)
+   - **Region:** Choose the region closest to you (e.g., Mumbai / AWS ap-south-1).
+4. Click **Create new project** and wait for provisioning to complete.
+
+---
+
+## 💾 Step 2: Initialize Database Schema (SQL Editor)
+
+Navigate to the **SQL Editor** tab in your Supabase dashboard and run the migrations in order:
+
+### 1️⃣ Run Schema SQL
+Open [001_schema.sql](file:///f:/RBMI%20Admission%20Hub/merrito-/supabase/migrations/001_schema.sql), copy its entire contents, paste it into a new SQL query tab in Supabase, and click **Run**.
+This creates all core CRM tables:
+* `profiles` (linked to Supabase auth users)
+* `leads`
+* `counselors`
+* `courses`
+* `activities`
+* `tasks`
+* `applications`
+* `queries`
+* `payments`
+* `portal_profiles`
+* `institute_settings`
+* `form_templates`
+* `campaigns`
+
+### 2️⃣ Run RLS & Scoped Policies SQL
+Open [002_real_mode_policies.sql](file:///f:/RBMI%20Admission%20Hub/merrito-/supabase/migrations/002_real_mode_policies.sql), copy its contents, run it in a new SQL query window.
+This configures secure **Row Level Security (RLS)** rules:
+* Counselors can only read leads assigned to them.
+* Students can only read their own profile, applications, queries, and payments.
+* Admins can read all data.
+
+### 3️⃣ Run Lead Intelligence Alterations SQL
+Open [004_lead_intelligence.sql](file:///f:/RBMI%20Admission%20Hub/merrito-/supabase/migrations/004_lead_intelligence.sql), copy its contents, and run it.
+This adds support columns for **lead scoring, strength levels, verification status, and campaign source payloads**.
+
+### 4️⃣ Setup Seed-Safe User Trigger
+Open [003_fix_auth_trigger_for_seed.sql](file:///f:/RBMI%20Admission%20Hub/merrito-/supabase/migrations/003_fix_auth_trigger_for_seed.sql) and run it.
+* This updates the default signup trigger to upsert profiles gracefully and leaves it disconnected during initial console-based seeding.
+
+### 5️⃣ Run Workflows and Letter Templates SQL
+Open [005_workflows_and_letters.sql](file:///f:/RBMI%20Admission%20Hub/merrito-/supabase/migrations/005_workflows_and_letters.sql), copy its contents, and run it in the SQL Editor.
+* This creates the tables `letter_templates`, `offer_letters`, and `workflow_rules` (with visual `flow_data` column) and sets up RLS policies.
+
+---
+
+
+## 🔑 Step 3: Configure Environment Variables
+
+Open your local project `.env` file and replace the placeholder Supabase settings:
 
 ```env
+# Supabase Integration (Active)
+SUPABASE_URL=https://your-project-id.supabase.co
+SUPABASE_ANON_KEY=your-actual-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-actual-service-role-key
+
+VITE_SUPABASE_URL=https://your-project-id.supabase.co
+VITE_SUPABASE_ANON_KEY=your-actual-anon-key
+
+# Turn on Real Data Database Mode
 REAL_DATA_MODE=true
 USE_DEMO_DATA=false
 SEED_DEMO_USERS=false
 VITE_SHOW_DEMO_LOGIN=false
-
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_ANON_KEY=your-anon-key
-
-WEBHOOK_SECRET=make-a-long-random-secret
-JWT_SECRET=make-another-long-random-secret
 ```
 
-Do not put `SUPABASE_SERVICE_ROLE_KEY` in frontend code. Keep it only in `.env` on the server.
+> [!IMPORTANT]
+> You can find `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` inside your Supabase dashboard under **Project Settings** -> **API**.
+> Make sure `SUPABASE_SERVICE_ROLE_KEY` is set in the server `.env` to bypass RLS policies for backend admin queries.
 
-## 2. Create database tables
+---
 
-In Supabase SQL Editor, run:
+## 👥 Step 4: Seed Real Users
 
-1. `supabase/migrations/001_schema.sql`
-2. `supabase/migrations/002_real_mode_policies.sql`
+Seeding populates initial credentials directly into your Supabase Auth database:
 
-The server uses `SUPABASE_SERVICE_ROLE_KEY`, so API routes can write securely while RLS protects direct browser access.
+1. Open [real-users.local.json](file:///f:/RBMI%20Admission%20Hub/merrito-/scripts/real-users.local.json) and modify it with the real names, emails, and passwords you want to set for Admin, Counselors, and Students.
+2. In your terminal, run:
+   ```bash
+   npm run seed:users
+   ```
+3. Verify in your Supabase Dashboard that the users are visible in the **Authentication** module and the corresponding profiles are populated in your **profiles** table.
 
-## 3. Create real users
+---
 
-Copy:
+## ⚡ Step 5: Enable Auth Signup Trigger for Self-Registration
 
-```bash
-scripts/real-users.example.json
+Once seeding is complete, run the following SQL command in your Supabase SQL editor to re-enable automated profile creation for student signups:
+
+```sql
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute function public.handle_new_user();
 ```
 
-to:
-
-```bash
-scripts/real-users.local.json
-```
-
-Put your real admin, counselor, and student emails/passwords there. This file is ignored by git.
-
-Then run:
-
-```bash
-npm run seed:users
-```
-
-That creates Supabase Auth users and matching `profiles`. Counselors are also inserted into `counselors` when `counselor_id` is provided.
-
-## 4. Remove local demo data
-
-When using Supabase, the app reads the real database. Existing `server/data.json` is ignored for core CRM data.
-
-For local fallback only, use:
-
-```env
-REAL_DATA_MODE=true
-USE_DEMO_DATA=false
-SEED_DEMO_USERS=false
-```
-
-## 5. Lead automation like Meritto
-
-Use this public endpoint:
-
-```http
-POST https://your-domain.com/api/webhook/lead
-X-Webhook-Secret: your-WEBHOOK_SECRET
-Content-Type: application/json
-```
-
-Payload:
-
-```json
-{
-  "name": "Rahul Sharma",
-  "phone": "+91 9876543210",
-  "email": "rahul@example.com",
-  "course": "MBA",
-  "source": "Website",
-  "city": "Bareilly",
-  "priority": "high"
-}
-```
-
-Connect sources through n8n, Zapier, Make, or direct webhooks:
-
-- Website forms: send directly to `/api/webhook/lead`.
-- Facebook Lead Ads: trigger on new lead, map fields, POST to webhook.
-- Google Ads Lead Form: use Zapier/n8n to forward leads.
-- Shiksha, CollegeDekho, JustDial: configure lead delivery URL or email parser, then POST normalized data.
-- Missed calls/IVR: Exotel/Knowlarity webhook can send caller number.
-
-The app will deduplicate by phone/email, auto-create a lead, assign follow-up tasks, and log activities.
+Your production database setup is now complete! Turn on your server (`npm start`) to run the CRM on real Supabase data.

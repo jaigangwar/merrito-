@@ -7,29 +7,103 @@ import { generateId, getDB, saveDB, seedIfEmpty } from './db.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Always load env from project root and override preloaded values from other cwd/shell contexts.
 dotenv.config({ path: path.resolve(__dirname, '../.env'), override: true });
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const SUPABASE_KEY = SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
-export const USE_SUPABASE = Boolean(SUPABASE_URL && SUPABASE_KEY);
-export const REAL_DATA_MODE = process.env.REAL_DATA_MODE === 'true' || process.env.USE_DEMO_DATA === 'false';
+export const USE_SUPABASE = Boolean(
+  SUPABASE_URL &&
+  SUPABASE_KEY &&
+  !SUPABASE_URL.includes('your-project') &&
+  SUPABASE_KEY !== 'your-anon-key' &&
+  SUPABASE_KEY !== 'your-service-role-key'
+);
+// Production-safe default: the local fallback must start empty. Demo fixtures
+// are only enabled when explicitly requested for a sandbox environment.
+export const REAL_DATA_MODE = process.env.REAL_DATA_MODE !== 'false' && process.env.USE_DEMO_DATA !== 'true';
 
 if (!USE_SUPABASE) {
   console.warn('Supabase credentials missing. Using local JSON database fallback.');
   seedIfEmpty();
 } else if (!SUPABASE_SERVICE_ROLE_KEY) {
-  console.warn(
-    'Supabase: server using anon key. If Row Level Security blocks reads/writes, set SUPABASE_SERVICE_ROLE_KEY in .env (server-only, never expose to the browser).'
-  );
+  console.warn('Supabase: server using anon key. If Row Level Security blocks reads/writes, set SUPABASE_SERVICE_ROLE_KEY in .env.');
 }
 
-const supabase = USE_SUPABASE ? createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false } }) : null;
+// Kept for auth.js and appStore.js which use the Supabase JS client.
+// A bounded request prevents a missing/unreachable Supabase project from
+// making the local JSON fallback hang every page load.
+let supabaseOffline = false;
 
-/** Server-side Supabase client (service role preferred). */
+async function fetchWithTimeout(input, init = {}) {
+  if (supabaseOffline) throw new Error('Supabase unavailable; using local JSON database');
+  const controller = new AbortController();
+  const timeoutMs = Number(process.env.SUPABASE_TIMEOUT_MS) || 5000;
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  if (init.signal) {
+    if (init.signal.aborted) controller.abort();
+    else init.signal.addEventListener('abort', () => controller.abort(), { once: true });
+  }
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } catch (error) {
+    // DNS/network failures are deterministic for the lifetime of this
+    // process. Mark the remote store offline so every feature immediately
+    // uses the local database rather than retrying on every request.
+    supabaseOffline = true;
+    throw error;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+const supabaseClient = USE_SUPABASE
+  ? createClient(SUPABASE_URL, SUPABASE_KEY, {
+      auth: { persistSession: false },
+      global: { fetch: fetchWithTimeout }
+    })
+  : null;
+
 export function getServerSupabase() {
-  return supabase;
+  return supabaseClient;
+}
+
+const supabaseHeaders = USE_SUPABASE ? {
+  apikey: SUPABASE_KEY,
+  Authorization: `Bearer ${SUPABASE_KEY}`,
+  'Content-Type': 'application/json',
+  Prefer: 'return=representation'
+} : null;
+
+async function supabaseFetch(path, options = {}) {
+  if (!USE_SUPABASE) throw new Error('Supabase not configured');
+  const url = `${SUPABASE_URL}${path}`;
+  const res = await fetchWithTimeout(url, {
+    ...options,
+    headers: { ...supabaseHeaders, ...options.headers }
+  });
+  if (res.status === 204) return null;
+  const body = await res.json();
+  if (!res.ok) {
+    const msg = body?.message || body?.error || res.statusText;
+    const err = new Error(msg);
+    err.status = res.status;
+    err.details = body;
+    throw err;
+  }
+  return body;
+}
+
+function supabaseSelect(table, filters = {}) {
+  const params = new URLSearchParams();
+  if (filters.stage) params.append('stage', `eq.${filters.stage}`);
+  if (filters.source) params.append('source', `eq.${filters.source}`);
+  if (filters.counselor_id) params.append('counselor_id', `eq.${filters.counselor_id}`);
+  if (filters.lead_id) params.append('lead_id', `eq.${filters.lead_id}`);
+  if (filters.status && table === 'tasks') params.append('status', `eq.${filters.status}`);
+  if (filters.id) params.append('id', `eq.${filters.id}`);
+  const qs = params.toString();
+  return `/rest/v1/${table}?select=*${qs ? '&' + qs : ''}&order=created_at.desc`;
 }
 
 function sortByDateDesc(items, key = 'created_at') {
@@ -55,17 +129,14 @@ function localCollection(key, sortKey = 'created_at', limit = null) {
 // ===== LEADS =====
 export async function getLeads(filters = {}) {
   if (USE_SUPABASE) {
-    let query = supabase.from('leads').select('*');
-
-    if (filters.stage) query = query.eq('stage', filters.stage);
-    if (filters.source) query = query.eq('source', filters.source);
-    if (filters.counselor_id) query = query.eq('counselor_id', filters.counselor_id);
-
-    const { data, error } = await query.order('created_at', { ascending: false });
-    if (error) throw error;
-    // debug log: show server-side fetched lead count for troubleshooting
-    try { console.log('SUPABASE_GET_LEADS ->', Array.isArray(data) ? data.length : 'no-data', 'filters=', filters); } catch (e) {}
-    return data || [];
+    try {
+      const path = supabaseSelect('leads', filters);
+      const data = await supabaseFetch(path);
+      console.log('SUPABASE_GET_LEADS ->', Array.isArray(data) ? data.length : 'no-data', 'filters=', filters);
+      return data || [];
+    } catch (e) {
+      console.warn('Supabase getLeads failed, falling back to local JSON:', e.message);
+    }
   }
 
   const db = getDB();
@@ -78,12 +149,13 @@ export async function getLeads(filters = {}) {
 
 export async function getLead(id) {
   if (USE_SUPABASE) {
-    const { data, error } = await supabase
-      .from('leads')
-      .select('*')
-      .eq('id', id)
-    if (error) throw error;
-    if ((data || []).length > 0 || !hasAnyLocalData('leads')) return data || [];
+    try {
+      const data = await supabaseFetch(`/rest/v1/leads?id=eq.${encodeURIComponent(id)}&select=*`);
+      if ((data || []).length > 0) return data[0];
+    } catch (e) {
+      console.warn('Supabase getLead failed, falling back to local JSON:', e.message);
+    }
+    if (!hasAnyLocalData('leads')) return null;
   }
 
   const db = getDB();
@@ -92,39 +164,39 @@ export async function getLead(id) {
 
 export async function createLead(leadData) {
   const id = generateId();
+  const now = nowIso();
   if (USE_SUPABASE) {
-    const now = nowIso();
-    const { data, error } = await supabase
-      .from('leads')
-      .insert([{ id, ...leadData, created_at: now, updated_at: now }])
-      .select()
-      .single();
-    if (error) throw error;
-    return data;
+    try {
+      const data = await supabaseFetch('/rest/v1/leads', {
+        method: 'POST',
+        body: JSON.stringify([{ id, ...leadData, created_at: now, updated_at: now }]),
+        headers: { Prefer: 'return=representation' }
+      });
+      if (data && data[0]) return data[0];
+    } catch (e) {
+      console.warn('Supabase lead insert failed, falling back to local JSON:', e.message);
+    }
   }
 
   const db = getDB();
-  const now = nowIso();
-  const lead = {
-    id,
-    ...leadData,
-    created_at: now,
-    updated_at: now
-  };
+  const lead = { id, ...leadData, created_at: now, updated_at: now };
   db.leads = [lead, ...(db.leads || [])];
+  saveDB(db);
   return lead;
 }
 
 export async function updateLead(id, leadData) {
   if (USE_SUPABASE) {
-    const { data, error } = await supabase
-      .from('leads')
-      .update({ ...leadData, updated_at: nowIso() })
-      .eq('id', id)
-      .select()
-      .single();
-    if (error) throw error;
-    return data;
+    try {
+      const data = await supabaseFetch(`/rest/v1/leads?id=eq.${encodeURIComponent(id)}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ ...leadData, updated_at: nowIso() }),
+        headers: { Prefer: 'return=representation' }
+      });
+      if (data && data[0]) return data[0];
+    } catch (e) {
+      console.warn('Supabase lead update failed, falling back to local JSON:', e.message);
+    }
   }
   const db = getDB();
   const idx = (db.leads || []).findIndex(l => l.id === id);
@@ -136,11 +208,13 @@ export async function updateLead(id, leadData) {
 
 export async function deleteLead(id) {
   if (USE_SUPABASE) {
-    const { error } = await supabase.from('leads').delete().eq('id', id);
-    if (error) throw error;
-    return true;
+    try {
+      await supabaseFetch(`/rest/v1/leads?id=eq.${encodeURIComponent(id)}`, { method: 'DELETE' });
+      return true;
+    } catch (e) {
+      console.warn('Supabase lead delete failed, falling back to local JSON:', e.message);
+    }
   }
-
   const db = getDB();
   const before = (db.leads || []).length;
   db.leads = (db.leads || []).filter(l => l.id !== id);
@@ -152,29 +226,25 @@ export async function deleteLead(id) {
 // ===== COUNSELORS =====
 export async function getCounselors() {
   if (USE_SUPABASE) {
-    const { data, error } = await supabase
-      .from('counselors')
-      .select('*')
-      .order('created_at', { ascending: false });
-    if (error) throw error;
-    return data || [];
+    try {
+      return await supabaseFetch('/rest/v1/counselors?select=*&order=created_at.desc');
+    } catch (e) {
+      console.warn('Supabase getCounselors failed, falling back to local JSON:', e.message);
+    }
   }
-
   const db = getDB();
   return sortByDateDesc(db.counselors || [], 'created_at');
 }
 
 export async function getCounselor(id) {
   if (USE_SUPABASE) {
-    const { data, error } = await supabase
-      .from('counselors')
-      .select('*')
-      .eq('id', id)
-      .single();
-    if (error) throw error;
-    return data;
+    try {
+      const data = await supabaseFetch(`/rest/v1/counselors?id=eq.${encodeURIComponent(id)}&select=*`);
+      if (data && data[0]) return data[0];
+    } catch (e) {
+      console.warn('Supabase getCounselor failed, falling back to local JSON:', e.message);
+    }
   }
-
   const db = getDB();
   return (db.counselors || []).find(c => c.id === id) || null;
 }
@@ -193,9 +263,15 @@ export async function createCounselor(row) {
     created_at: now
   };
   if (USE_SUPABASE) {
-    const { data, error } = await supabase.from('counselors').insert([counselor]).select().single();
-    if (error) throw error;
-    return data;
+    try {
+      const data = await supabaseFetch('/rest/v1/counselors', {
+        method: 'POST', body: JSON.stringify([counselor]),
+        headers: { Prefer: 'return=representation' }
+      });
+      if (data && data[0]) return data[0];
+    } catch (e) {
+      console.warn('Supabase counselor insert failed, falling back to local JSON:', e.message);
+    }
   }
   const db = getDB();
   if (!db.counselors) db.counselors = [];
@@ -206,9 +282,15 @@ export async function createCounselor(row) {
 
 export async function updateCounselor(id, updates) {
   if (USE_SUPABASE) {
-    const { data, error } = await supabase.from('counselors').update(updates).eq('id', id).select().single();
-    if (error) throw error;
-    return data;
+    try {
+      const data = await supabaseFetch(`/rest/v1/counselors?id=eq.${encodeURIComponent(id)}`, {
+        method: 'PATCH', body: JSON.stringify(updates),
+        headers: { Prefer: 'return=representation' }
+      });
+      if (data && data[0]) return data[0];
+    } catch (e) {
+      console.warn('Supabase counselor update failed, falling back to local JSON:', e.message);
+    }
   }
   const db = getDB();
   const idx = (db.counselors || []).findIndex(c => c.id === id);
@@ -220,9 +302,12 @@ export async function updateCounselor(id, updates) {
 
 export async function deleteCounselor(id) {
   if (USE_SUPABASE) {
-    const { error } = await supabase.from('counselors').delete().eq('id', id);
-    if (error) throw error;
-    return true;
+    try {
+      await supabaseFetch(`/rest/v1/counselors?id=eq.${encodeURIComponent(id)}`, { method: 'DELETE' });
+      return true;
+    } catch (e) {
+      console.warn('Supabase counselor delete failed, falling back to local JSON:', e.message);
+    }
   }
   const db = getDB();
   const before = (db.counselors || []).length;
@@ -235,45 +320,41 @@ export async function deleteCounselor(id) {
 // ===== COURSES =====
 export async function getCourses() {
   if (USE_SUPABASE) {
-    const { data, error } = await supabase
-      .from('courses')
-      .select('*')
-      .order('created_at', { ascending: false });
-    if (error) throw error;
-    return data || [];
+    try {
+      return await supabaseFetch('/rest/v1/courses?select=*&order=created_at.desc');
+    } catch (e) {
+      console.warn('Supabase getCourses failed, falling back to local JSON:', e.message);
+    }
   }
-
   const db = getDB();
   return sortByDateDesc(db.courses || [], 'created_at');
 }
 
 export async function getCourse(id) {
   if (USE_SUPABASE) {
-    const { data, error } = await supabase
-      .from('courses')
-      .select('*')
-      .eq('id', id)
-      .single();
-    if (error) throw error;
-    return data;
+    try {
+      const data = await supabaseFetch(`/rest/v1/courses?id=eq.${encodeURIComponent(id)}&select=*`);
+      if (data && data[0]) return data[0];
+    } catch (e) {
+      console.warn('Supabase getCourse failed, falling back to local JSON:', e.message);
+    }
   }
-
   const db = getDB();
   return (db.courses || []).find(c => c.id === id) || null;
 }
 
 export async function updateCourse(id, courseData) {
   if (USE_SUPABASE) {
-    const { data, error } = await supabase
-      .from('courses')
-      .update(courseData)
-      .eq('id', id)
-      .select()
-      .single();
-    if (error) throw error;
-    return data;
+    try {
+      const data = await supabaseFetch(`/rest/v1/courses?id=eq.${encodeURIComponent(id)}`, {
+        method: 'PATCH', body: JSON.stringify(courseData),
+        headers: { Prefer: 'return=representation' }
+      });
+      if (data && data[0]) return data[0];
+    } catch (e) {
+      console.warn('Supabase course update failed, falling back to local JSON:', e.message);
+    }
   }
-
   const db = getDB();
   const idx = (db.courses || []).findIndex(c => c.id === id);
   if (idx === -1) throw new Error('Course not found');
@@ -298,9 +379,15 @@ export async function createCourse(row) {
     created_at: now
   };
   if (USE_SUPABASE) {
-    const { data, error } = await supabase.from('courses').insert([course]).select().single();
-    if (error) throw error;
-    return data;
+    try {
+      const data = await supabaseFetch('/rest/v1/courses', {
+        method: 'POST', body: JSON.stringify([course]),
+        headers: { Prefer: 'return=representation' }
+      });
+      if (data && data[0]) return data[0];
+    } catch (e) {
+      console.warn('Supabase course insert failed, falling back to local JSON:', e.message);
+    }
   }
   const db = getDB();
   if (!db.courses) db.courses = [];
@@ -311,9 +398,12 @@ export async function createCourse(row) {
 
 export async function deleteCourse(id) {
   if (USE_SUPABASE) {
-    const { error } = await supabase.from('courses').delete().eq('id', id);
-    if (error) throw error;
-    return true;
+    try {
+      await supabaseFetch(`/rest/v1/courses?id=eq.${encodeURIComponent(id)}`, { method: 'DELETE' });
+      return true;
+    } catch (e) {
+      console.warn('Supabase course delete failed, falling back to local JSON:', e.message);
+    }
   }
   const db = getDB();
   const before = (db.courses || []).length;
@@ -326,44 +416,43 @@ export async function deleteCourse(id) {
 // ===== ACTIVITIES =====
 export async function getActivities(limit = 10) {
   if (USE_SUPABASE) {
-    const { data, error } = await supabase
-      .from('activities')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(limit);
-    if (error) throw error;
-    return data || [];
+    try {
+      return await supabaseFetch(`/rest/v1/activities?select=*&order=created_at.desc&limit=${limit}`);
+    } catch (e) {
+      console.warn('Supabase getActivities failed, falling back to local JSON:', e.message);
+    }
   }
-
   const db = getDB();
   return sortByDateDesc(db.activities || [], 'created_at').slice(0, limit);
 }
 
 export async function createActivity(activityData) {
+  const id = generateId();
+  const now = nowIso();
   if (USE_SUPABASE) {
-    const payload = {
-      id: generateId(),
-      ...activityData,
-      lead_id: activityData.lead_id ?? null,
-      message: activityData.message || activityData.description || '',
-      created_at: nowIso()
-    };
-    const { data, error } = await supabase
-      .from('activities')
-      .insert([payload])
-      .select()
-      .single();
-    if (error) throw error;
-    return data;
+    try {
+      const data = await supabaseFetch('/rest/v1/activities', {
+        method: 'POST',
+        body: JSON.stringify([{
+          id,
+          ...activityData,
+          lead_id: activityData.lead_id ?? null,
+          message: activityData.message || activityData.description || '',
+          created_at: now
+        }]),
+        headers: { Prefer: 'return=representation' }
+      });
+      if (data && data[0]) return data[0];
+    } catch (e) {
+      console.warn('Supabase activity insert failed, falling back to local JSON:', e.message);
+    }
   }
-
   const db = getDB();
   const activity = {
-    id: generateId(),
-    type: activityData.type || 'note',
+    id, type: activityData.type || 'note',
     ...activityData,
     message: activityData.message || activityData.description || '',
-    created_at: nowIso()
+    created_at: now
   };
   db.activities = [activity, ...(db.activities || [])];
   saveDB(db);
@@ -373,14 +462,16 @@ export async function createActivity(activityData) {
 // ===== TASKS / FOLLOW-UPS =====
 export async function getTasks(filters = {}) {
   if (USE_SUPABASE) {
-    let query = supabase.from('tasks').select('*');
-    if (filters.lead_id) query = query.eq('lead_id', filters.lead_id);
-    if (filters.status) query = query.eq('status', filters.status);
-    const { data, error } = await query.order('due_date', { ascending: true });
-    if (error) throw error;
-    return data || [];
+    try {
+      const params = new URLSearchParams({ select: '*' });
+      if (filters.lead_id) params.append('lead_id', `eq.${filters.lead_id}`);
+      if (filters.status) params.append('status', `eq.${filters.status}`);
+      const data = await supabaseFetch(`/rest/v1/tasks?${params.toString()}&order=due_date.asc`);
+      return data || [];
+    } catch (e) {
+      console.warn('Supabase getTasks failed, falling back to local JSON:', e.message);
+    }
   }
-
   const db = getDB();
   let tasks = db.tasks || [];
   if (filters.lead_id) tasks = tasks.filter(t => t.lead_id === filters.lead_id);
@@ -401,13 +492,17 @@ export async function createTask(taskData) {
     created_at: now,
     updated_at: now
   };
-
   if (USE_SUPABASE) {
-    const { data, error } = await supabase.from('tasks').insert([task]).select().single();
-    if (error) throw error;
-    return data;
+    try {
+      const data = await supabaseFetch('/rest/v1/tasks', {
+        method: 'POST', body: JSON.stringify([task]),
+        headers: { Prefer: 'return=representation' }
+      });
+      if (data && data[0]) return data[0];
+    } catch (e) {
+      console.warn('Supabase task insert failed, falling back to local JSON:', e.message);
+    }
   }
-
   const db = getDB();
   db.tasks = [task, ...(db.tasks || [])];
   saveDB(db);
@@ -416,13 +511,17 @@ export async function createTask(taskData) {
 
 export async function updateTask(id, updates) {
   const payload = { ...updates, updated_at: nowIso() };
-
   if (USE_SUPABASE) {
-    const { data, error } = await supabase.from('tasks').update(payload).eq('id', id).select().single();
-    if (error) throw error;
-    return data;
+    try {
+      const data = await supabaseFetch(`/rest/v1/tasks?id=eq.${encodeURIComponent(id)}`, {
+        method: 'PATCH', body: JSON.stringify(payload),
+        headers: { Prefer: 'return=representation' }
+      });
+      if (data && data[0]) return data[0];
+    } catch (e) {
+      console.warn('Supabase task update failed, falling back to local JSON:', e.message);
+    }
   }
-
   const db = getDB();
   const idx = (db.tasks || []).findIndex(t => t.id === id);
   if (idx === -1) throw new Error('Task not found');
@@ -433,11 +532,13 @@ export async function updateTask(id, updates) {
 
 export async function deleteTask(id) {
   if (USE_SUPABASE) {
-    const { error } = await supabase.from('tasks').delete().eq('id', id);
-    if (error) throw error;
-    return true;
+    try {
+      await supabaseFetch(`/rest/v1/tasks?id=eq.${encodeURIComponent(id)}`, { method: 'DELETE' });
+      return true;
+    } catch (e) {
+      console.warn('Supabase task delete failed, falling back to local JSON:', e.message);
+    }
   }
-
   const db = getDB();
   const before = (db.tasks || []).length;
   db.tasks = (db.tasks || []).filter(t => t.id !== id);

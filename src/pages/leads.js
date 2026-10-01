@@ -142,7 +142,7 @@ function renderLeadsTable(tableWrap, result, container) {
           <th>Source</th>
           <th class="sortable" data-sort="stage">Stage <i data-lucide="arrow-up-down" style="width:12px;height:12px;"></i></th>
           <th>Counselor</th>
-          <th class="sortable" data-sort="lead_score">Score <i data-lucide="arrow-up-down" style="width:12px;height:12px;"></i></th>
+          <th class="sortable" data-sort="lead_score">Quality <i data-lucide="arrow-up-down" style="width:12px;height:12px;"></i></th>
           <th class="sortable" data-sort="created_at">Date <i data-lucide="arrow-up-down" style="width:12px;height:12px;"></i></th>
           <th>Priority</th>
           <th>Actions</th>
@@ -155,6 +155,8 @@ function renderLeadsTable(tableWrap, result, container) {
           const priority = getPriorityInfo(l.priority);
           const initials = l.name.split(' ').map(n => n[0]).join('');
           const scoreColor = (l.lead_score || 0) > 60 ? 'var(--color-success)' : (l.lead_score || 0) > 40 ? 'var(--color-warning)' : 'var(--color-text-muted)';
+          const strength = l.lead_strength || ((l.lead_score || 0) > 75 ? 'hot' : (l.lead_score || 0) > 55 ? 'warm' : 'nurture');
+          const verification = l.verification_status || 'needs_review';
           return `
           <tr class="lead-row" data-id="${l.id}">
             <td><input type="checkbox" class="lead-check" data-id="${l.id}" /></td>
@@ -168,7 +170,10 @@ function renderLeadsTable(tableWrap, result, container) {
             <td><span class="source-label">${l.source}</span></td>
             <td><span class="stage-badge" style="background:${stage.bg};color:${stage.color};">${stage.label}</span></td>
             <td><span class="counselor-name">${l.counselor_name}</span></td>
-            <td><span class="score-cell" style="color:${scoreColor};font-weight:700;">${l.lead_score || 10}</span></td>
+            <td>
+              <span class="score-cell" style="color:${scoreColor};font-weight:700;">${l.lead_score || 10}</span>
+              <small style="display:block;color:var(--color-text-muted);text-transform:capitalize;">${strength} - ${verification.replace('_', ' ')}</small>
+            </td>
             <td><span class="date-cell">${formatDate(l.created_at)}</span></td>
             <td><span class="priority-dot" style="background:${priority.color};" title="${priority.label}"></span></td>
             <td>
@@ -263,6 +268,7 @@ function showLeadDetails(lead) {
   const stage = getStageInfo(lead.stage);
   const stageOrder = ['enquiry','counseling_scheduled','counseling_done','application_submitted','documents_verified','admitted','enrolled'];
   const stageIdx = stageOrder.indexOf(lead.stage);
+  const attribution = lead.source_attribution || { primary: lead.source, secondary: 'Not tracked', tertiary: 'Not tracked' };
   
   const timelineHtml = stageOrder.map((s, i) => {
     const info = getStageInfo(s);
@@ -307,6 +313,9 @@ function showLeadDetails(lead) {
           <div class="info-item"><label>Phone</label><span>${lead.phone}</span></div>
           <div class="info-item"><label>Email</label><span>${lead.email || '—'}</span></div>
           <div class="info-item"><label>Source</label><span>${lead.source}</span></div>
+          <div class="info-item"><label>Attribution</label><span>${escapeHtml(attribution.primary || 'N/A')} / ${escapeHtml(attribution.secondary || 'N/A')}</span></div>
+          <div class="info-item"><label>Verification</label><span>${escapeHtml((lead.verification_status || 'needs_review').replace('_', ' '))}</span></div>
+          <div class="info-item"><label>Lead Strength</label><span>${escapeHtml(lead.lead_strength || 'nurture')}</span></div>
           <div class="info-item"><label>Course</label><span>${lead.course_name}</span></div>
           <div class="info-item"><label>Counselor</label><span>${lead.counselor_name}</span></div>
         </div>

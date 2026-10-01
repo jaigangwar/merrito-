@@ -2,12 +2,31 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
   <title>RBMI Admission Hub</title>
-  <link rel="icon" type="image/png" href="/logo.png" />
+  <meta name="description" content="Complete Admission Management CRM for Rakshpal Bahadur Management Institute — manage leads, counselors, applications, and payments." />
+  
+  <!-- Open Graph -->
+  <meta property="og:title" content="RBMI Admission Hub" />
+  <meta property="og:description" content="Complete Admission Management CRM for Rakshpal Bahadur Management Institute." />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="/logo.png" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="RBMI Admission Hub" />
+  <meta name="twitter:description" content="Complete Admission Management CRM for Rakshpal Bahadur Management Institute." />
+  <meta name="twitter:image" content="/logo.png" />
+
+  <!-- PWA & Apple Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="RBMI CRM" />
+  <meta name="theme-color" content="#6366f1" />
+
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="apple-touch-icon" href="/logo.png" />
   <link rel="manifest" href="/manifest.json" />
-  <meta name="theme-color" content="#1e3a8a" />
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
@@ -29,39 +48,53 @@
       position:fixed;inset:0;z-index:99999;
       background:radial-gradient(ellipse at 30% 20%,#1e40af 0%,#1e3a8a 40%,#312e81 100%);
       display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;
-      perspective:1000px;transition:opacity 0.4s ease;
+      perspective:1200px;transition:opacity 0.4s ease;
     }
     .b-logo-wrap{
       animation:float3d 3s ease-in-out infinite;
       transform-style:preserve-3d;
-      width:120px;height:120px;
+      width:220px;height:220px;
+      margin-bottom:15px;
     }
     .b-logo{
-      width:120px;height:120px;
+      width:220px;height:220px;
       border-radius:50%;overflow:hidden;
-      border:3px solid rgba(255,255,255,0.4);
+      border:5px solid rgba(255,255,255,0.5);
       display:flex;align-items:center;justify-content:center;
-      animation:rotate3d 4s linear infinite;
+      animation:rotate3d 6s linear infinite;
       transform-style:preserve-3d;
       box-shadow:
-        0 20px 60px rgba(15,23,42,0.4),
-        0 0 40px rgba(20,184,166,0.3),
-        inset 0 0 20px rgba(255,255,255,0.1);
+        0 20px 60px rgba(15,23,42,0.5),
+        0 0 80px rgba(20,184,166,0.5),
+        0 0 120px rgba(99,102,241,0.3),
+        inset 0 0 40px rgba(255,255,255,0.2);
       background:transparent;
       padding:0;
+      transition:transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .b-logo:hover{
+      transform:rotateY(180deg) scale(1.08);
+      box-shadow:
+        0 20px 80px rgba(15,23,42,0.6),
+        0 0 100px rgba(20,184,166,0.6),
+        0 0 150px rgba(99,102,241,0.4),
+        inset 0 0 40px rgba(255,255,255,0.25);
     }
     .b-logo img{
-      width:80%;height:80%;object-fit:contain;
+      width:75%;height:75%;object-fit:contain;
       border-radius:50%;
-      filter:brightness(1.08) contrast(1.05);
+      filter:brightness(1.12) contrast(1.08) drop-shadow(0 0 8px rgba(20,184,166,0.3));
       background:transparent !important;
       margin:0;
-      /* Removed scale to prevent cutting */
+      transition:filter 0.3s ease;
+    }
+    .b-logo:hover img{
+      filter:brightness(1.2) contrast(1.1) drop-shadow(0 0 16px rgba(20,184,166,0.5));
     }
     .b-logo-glow{
-      position:absolute;width:120px;height:120px;
-      background:radial-gradient(circle,rgba(20,184,166,0.3) 0%,transparent 70%);
-      filter:blur(20px);animation:pulse 2s ease-in-out infinite;
+      position:absolute;width:220px;height:220px;
+      background:radial-gradient(circle,rgba(20,184,166,0.5) 0%,rgba(99,102,241,0.3) 40%,transparent 75%);
+      filter:blur(30px);animation:pulse 2s ease-in-out infinite;
     }
     /* SIDEBAR & LOGIN LOGO */
     .sidebar-logo{
@@ -97,20 +130,15 @@
     /* BOOT LOGO CLEANED UP */
     @keyframes float3d{
       0%,100%{transform:translateY(0px) rotateX(0deg)}
-      50%{transform:translateY(-15px) rotateX(5deg)}
+      50%{transform:translateY(-20px) rotateX(5deg)}
     }
     @keyframes rotate3d{
       0%{transform:rotateY(0deg)}
       100%{transform:rotateY(360deg)}
     }
-    .b-logo-glow{
-      position:absolute;width:120px;height:120px;
-      background:radial-gradient(circle,rgba(20,184,166,0.3) 0%,transparent 70%);
-      filter:blur(20px);animation:pulse 2s ease-in-out infinite;
-    }
     @keyframes pulse{
-      0%,100%{opacity:0.5;transform:scale(1)}
-      50%{opacity:1;transform:scale(1.2)}
+      0%,100%{opacity:0.6;transform:scale(1)}
+      50%{opacity:1;transform:scale(1.35)}
     }
     .b-title{
       font-size:28px;font-weight:800;color:#fff;margin-bottom:6px;
@@ -153,10 +181,10 @@
     #page-content{flex:1;overflow-y:auto;overflow-x:hidden;padding:24px}
 
     /* LOGIN */
-    #login-root{display:none;position:fixed;inset:0;z-index:9998;background:#fff}
-    #login-root.show{display:flex}
-    .lp{display:flex;width:100%;height:100vh}
-    .lp-left{flex:1;background:radial-gradient(ellipse at 30% 20%,#1e40af 0%,#1e3a8a 40%,#312e81 100%);display:flex;flex-direction:column;justify-content:space-between;padding:48px;color:#fff;overflow:hidden}
+    #login-root{display:none;position:absolute;inset:0;min-height:100vh;z-index:9998;background:#fff;overflow-y:auto;overflow-x:hidden}
+    #login-root.show{display:block}
+    .lp{display:flex;width:100%;min-height:100vh}
+    .lp-left{flex:1;background:radial-gradient(ellipse at 30% 20%,#1e40af 0%,#1e3a8a 40%,#312e81 100%);display:flex;flex-direction:column;justify-content:space-between;padding:48px;color:#fff;overflow:hidden;position:relative}
     .lp-brand{display:flex;align-items:center;gap:14px}
     .lp-logo{width:44px;height:44px;background:linear-gradient(135deg,#14b8a6,#2563eb);border:1px solid rgba(255,255,255,0.25);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;color:#fff;box-shadow:0 14px 32px rgba(15,23,42,.18)}
     .lp-brand-name{font-size:20px;font-weight:800}
@@ -207,6 +235,13 @@
     .lp-badge.counselor{background:#dcfce7;color:#16a34a}
     .lp-demo-name{font-weight:600;font-size:13px;color:#0f172a}
     .lp-demo-email{font-size:11px;color:#64748b}
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .lp { flex-direction: column; }
+      .lp-left { min-height: 400px; }
+      .lp-right { max-width: 100% !important; padding: 24px !important; }
+    }
   </style>
 </head>
 <body>
@@ -245,8 +280,8 @@
 
 <script>
 // Boot progress animation
-var msgs = ['Loading modules...','Setting up CRM...','Connecting to server...','Almost ready...','Ready!'];
-var pcts = [20,45,70,90,100];
+var msgs = ['Initializing...','Loading modules...','Setting up CRM...','Connecting to server...','Almost ready!','Welcome to RBMI!'];
+var pcts = [10,30,50,70,90,100];
 var fill = document.getElementById('bfill');
 var bmsg = document.getElementById('bmsg');
 for(var i=0;i<msgs.length;i++){
@@ -254,7 +289,7 @@ for(var i=0;i<msgs.length;i++){
     setTimeout(function(){
       fill.style.width = pcts[idx]+'%';
       bmsg.textContent = msgs[idx];
-    }, 400 + idx*600);
+    }, 200 + idx*300); // Finishes in ~1.7 seconds
   })(i);
 }
 </script>

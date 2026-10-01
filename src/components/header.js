@@ -1,5 +1,5 @@
 import { openModal } from './modal.js';
-import { createLead, fetchCounselors, fetchCourses, fetchLeads, updatePortalProfile } from '../lib/api.js';
+import { createLead, fetchCounselors, fetchCourses, fetchLeads, updatePortalProfile, fetchNotificationsList, getUnreadCount, markNotificationRead, markAllNotificationsRead, getUserLanguage, setUserLanguage } from '../lib/api.js';
 import { debounce, getAvatarColor } from './utils.js';
 
 function roleLabel(role) {
@@ -31,7 +31,26 @@ export function renderHeader(user = null) {
     </div>
     <div class="header-right">
       <button class="header-btn" id="btn-dark-mode" title="Toggle dark mode"><i data-lucide="moon" style="width:18px;height:18px;"></i></button>
-      <button class="header-btn" id="btn-notifications" title="Notifications"><i data-lucide="bell" style="width:18px;height:18px;"></i></button>
+      
+      <div class="language-switcher" style="position: relative;">
+        <button class="header-btn" id="btn-lang-switcher" title="Change Language" style="display: flex; align-items: center; gap: 4px; border: none; background: transparent; cursor: pointer;">
+          <i data-lucide="globe" style="width:18px;height:18px;"></i>
+          <span id="current-lang-code" style="font-size: 11px; font-weight: 700; text-transform: uppercase;">EN</span>
+        </button>
+        <div class="lang-dropdown" id="lang-dropdown" style="display: none; position: absolute; top: 100%; right: 0; margin-top: 8px; background: var(--color-bg-card); border: 1px solid var(--color-border); border-radius: 8px; width: 150px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); z-index: 1000; padding: 4px 0;">
+          <a href="#" class="lang-option" data-lang="en" style="display: flex; align-items: center; padding: 8px 12px; font-size: 13px; color: var(--color-text); text-decoration: none; justify-content: space-between;">English <span>EN</span></a>
+          <a href="#" class="lang-option" data-lang="hi" style="display: flex; align-items: center; padding: 8px 12px; font-size: 13px; color: var(--color-text); text-decoration: none; justify-content: space-between;">हिन्दी <span>HI</span></a>
+          <a href="#" class="lang-option" data-lang="ur" style="display: flex; align-items: center; padding: 8px 12px; font-size: 13px; color: var(--color-text); text-decoration: none; justify-content: space-between;">اردो <span>UR</span></a>
+          <a href="#" class="lang-option" data-lang="pa" style="display: flex; align-items: center; padding: 8px 12px; font-size: 13px; color: var(--color-text); text-decoration: none; justify-content: space-between;">ਪੰਜਾਬੀ <span>PA</span></a>
+          <a href="#" class="lang-option" data-lang="bn" style="display: flex; align-items: center; padding: 8px 12px; font-size: 13px; color: var(--color-text); text-decoration: none; justify-content: space-between;">বাংলা <span>BN</span></a>
+        </div>
+      </div>
+
+      <button class="header-btn" id="btn-notifications" title="Notifications" style="position: relative;">
+        <i data-lucide="bell" style="width:18px;height:18px;"></i>
+        <span class="notification-badge" id="notif-unread-badge" style="display: none; position: absolute; top: 2px; right: 2px; background: #ef4444; color: #fff; border-radius: 50%; width: 14px; height: 14px; font-size: 9px; font-weight: bold; align-items: center; justify-content: center;">0</span>
+      </button>
+
       <div class="header-divider"></div>
       ${canCreateLead ? `
       <button class="btn btn-primary header-add-btn" id="btn-add-lead">
@@ -71,7 +90,17 @@ export function renderHeader(user = null) {
     '/access-control': 'Access Control',
     '/audit-log': 'Audit Log',
     '/portal': 'My Application',
-    '/download': 'Mobile App'
+    '/download': 'Mobile App',
+    '/sqi': 'Student Quality Index',
+    '/user-dashboard': 'Productivity Report',
+    '/admission-tests': 'Admission Tests',
+    '/scholarships': 'Scholarships',
+    '/batches': 'Batch Management',
+    '/lead-distribution': 'Lead Distribution',
+    '/notifications': 'Notifications',
+    '/form-builder': 'Form Builder',
+    '/call-logs': 'Call Logs',
+    '/student-inbox': 'Student Inbox'
   };
 
   function updateBreadcrumb() {
@@ -165,23 +194,131 @@ export function renderHeader(user = null) {
     updateDarkIcon();
   }
 
-  document.getElementById('btn-notifications')?.addEventListener('click', () => {
-    const studentContent = `
-      <div style="display:flex;flex-direction:column;gap:12px;">
-        <div class="notif-item-row"><span class="notif-dot new"></span><div><strong>Document review pending</strong><br/><small style="color:var(--color-text-muted);">Upload your Class 12 marksheet</small></div></div>
-        <div class="notif-item-row"><span class="notif-dot"></span><div><strong>Callback slot reserved</strong><br/><small style="color:var(--color-text-muted);">Admissions team will contact you today</small></div></div>
-        <div class="notif-item-row"><span class="notif-dot"></span><div><strong>Fee slip available</strong><br/><small style="color:var(--color-text-muted);">Open Fee Desk for payment details</small></div></div>
-      </div>
-    `;
-    const crmContent = `
-      <div style="display:flex;flex-direction:column;gap:12px;">
-        <div class="notif-item-row"><span class="notif-dot new"></span><div><strong>New lead captured</strong><br/><small style="color:var(--color-text-muted);">Just now via website form</small></div></div>
-        <div class="notif-item-row"><span class="notif-dot"></span><div><strong>Stage update</strong><br/><small style="color:var(--color-text-muted);">Applicant moved to Admitted</small></div></div>
-        <div class="notif-item-row"><span class="notif-dot"></span><div><strong>Counseling scheduled</strong><br/><small style="color:var(--color-text-muted);">3 sessions today</small></div></div>
-      </div>
-    `;
-    openModal('Notifications', role === 'student' ? studentContent : crmContent, { submitLabel: 'Mark All Read', width: '420px' });
+  // ---- Notifications Handling ----
+  async function updateUnreadBadge() {
+    try {
+      const res = await getUnreadCount();
+      const badge = document.getElementById('notif-unread-badge');
+      if (badge) {
+        if (res && res.count > 0) {
+          badge.textContent = res.count;
+          badge.style.display = 'flex';
+        } else {
+          badge.style.display = 'none';
+        }
+      }
+    } catch (err) {
+      console.error('Failed to update unread badge:', err);
+    }
+  }
+
+  // Update badge immediately
+  updateUnreadBadge();
+
+  document.getElementById('btn-notifications')?.addEventListener('click', async () => {
+    try {
+      const notifications = await fetchNotificationsList();
+      const content = `
+        <div style="display:flex;flex-direction:column;gap:12px;max-height:400px;overflow-y:auto;padding-right:4px;" id="modal-notif-list">
+          ${notifications.length === 0 ? `
+            <div style="text-align:center;padding:24px;color:var(--color-text-muted);">
+              <i data-lucide="bell-off" style="width:32px;height:32px;margin-bottom:8px;opacity:0.5;display:inline-block;"></i>
+              <p>No notifications yet</p>
+            </div>
+          ` : notifications.map(n => `
+            <div class="notif-item-row" data-id="${n.id}" style="display:flex;gap:12px;padding:10px;border-radius:6px;background:${n.read ? 'transparent' : 'var(--color-bg-page)'};border:1px solid ${n.read ? 'transparent' : 'var(--color-border)'};align-items:flex-start;position:relative;">
+              <span class="notif-dot ${n.read ? '' : 'new'}" style="width:8px;height:8px;border-radius:50%;background:#ef4444;margin-top:6px;flex-shrink:0;visibility:${n.read ? 'hidden' : 'visible'};"></span>
+              <div style="flex-grow:1;">
+                <div style="font-weight:600;font-size:13px;color:var(--color-text);">${n.title}</div>
+                <div style="font-size:12px;color:var(--color-text-muted);margin-top:2px;">${n.message}</div>
+                <div style="font-size:10px;color:var(--color-text-muted);margin-top:6px;opacity:0.8;">${new Date(n.created_at).toLocaleString()}</div>
+              </div>
+              ${!n.read ? `<button class="btn-mark-read-item" data-id="${n.id}" style="background:transparent;border:none;color:var(--color-primary);font-size:11px;cursor:pointer;flex-shrink:0;padding:2px 4px;font-weight:600;">Mark read</button>` : ''}
+            </div>
+          `).join('')}
+        </div>
+      `;
+
+      openModal('Notifications', content, {
+        submitLabel: 'Mark All Read',
+        width: '440px',
+        onSubmit: async () => {
+          try {
+            await markAllNotificationsRead();
+            await updateUnreadBadge();
+            return true;
+          } catch (err) {
+            console.error('Failed to mark all read:', err);
+          }
+        }
+      });
+
+      // Hook up individual mark read buttons
+      setTimeout(() => {
+        document.querySelectorAll('.btn-mark-read-item').forEach(btn => {
+          btn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            const notifId = btn.dataset.id;
+            try {
+              await markNotificationRead(notifId);
+              const row = btn.closest('.notif-item-row');
+              if (row) {
+                row.style.background = 'transparent';
+                row.style.borderColor = 'transparent';
+                const dot = row.querySelector('.notif-dot');
+                if (dot) dot.style.visibility = 'hidden';
+              }
+              btn.remove();
+              await updateUnreadBadge();
+            } catch (err) {
+              console.error('Failed to mark item read:', err);
+            }
+          });
+        });
+        window.renderIcons?.();
+      }, 50);
+
+    } catch (err) {
+      console.error('Failed to load notifications:', err);
+    }
   });
+
+  // ---- Language Switcher Handling ----
+  const langBtn = document.getElementById('btn-lang-switcher');
+  const langDropdown = document.getElementById('lang-dropdown');
+  const currentLangCode = document.getElementById('current-lang-code');
+
+  if (langBtn && langDropdown && currentLangCode) {
+    langBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      langDropdown.style.display = langDropdown.style.display === 'none' ? 'block' : 'none';
+    });
+
+    document.addEventListener('click', () => {
+      if (langDropdown) langDropdown.style.display = 'none';
+    });
+
+    langDropdown.querySelectorAll('.lang-option').forEach(opt => {
+      opt.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const code = opt.dataset.lang;
+        currentLangCode.textContent = code;
+        try {
+          await setUserLanguage({ language: code });
+          window.dispatchEvent(new CustomEvent('rbmi:language-changed', { detail: code }));
+        } catch (err) {
+          console.error('Failed to set language:', err);
+        }
+      });
+    });
+
+    // Load initial user language preference
+    getUserLanguage().then(res => {
+      if (res && res.language) {
+        currentLangCode.textContent = res.language;
+      }
+    }).catch(err => console.error(err));
+  }
 
   document.getElementById('btn-portal-action')?.addEventListener('click', async () => {
     if (role === 'student') {

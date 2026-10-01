@@ -9,11 +9,14 @@ const ROUTE_PERMISSIONS = {
   counselor: [
     '/dashboard', '/leads', '/pipeline', '/applications', '/courses',
     '/calendar', '/queries', '/marketing', '/ai-assistant', '/download',
-    '/user-dashboard', '/sqi'
+    '/user-dashboard', '/sqi', '/admission-tests', '/scholarships',
+    '/batches', '/notifications', '/lead-distribution', '/call-logs', 
+    '/student-inbox', '/chat-sessions', '/drip-campaigns'
   ],
   student: [
     '/portal', '/applications', '/courses', '/queries', '/payments',
-    '/ai-assistant', '/download'
+    '/ai-assistant', '/download', '/admission-tests', '/scholarships',
+    '/notifications', '/student-inbox'
   ]
 };
 
@@ -73,7 +76,22 @@ export function initRouter() {
     const el = document.getElementById('page-content');
     if (!el) return;
 
-    const handler = routes[hash];
+    let handler = routes[hash];
+    
+    // Dynamic route matching (e.g. /form/:id)
+    if (!handler) {
+      for (const [routePath, routeHandler] of Object.entries(routes)) {
+        if (routePath.includes('/:')) {
+          const regexPath = routePath.replace(/:[^\s/]+/g, '([\\w-]+)');
+          const regex = new RegExp(`^${regexPath}$`);
+          if (hash.match(regex)) {
+            handler = routeHandler;
+            break;
+          }
+        }
+      }
+    }
+
     if (!handler) {
       el.innerHTML = `<div style="text-align:center;padding:4rem;"><h2>404</h2><p style="color:var(--color-text-muted);margin-top:8px;">Page not found</p><button class="btn btn-primary" style="margin-top:16px;" onclick="window.location.hash='/dashboard'">Back to Safety</button></div>`;
       runLucide();

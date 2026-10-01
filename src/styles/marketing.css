@@ -209,6 +209,31 @@
   padding: 0 20px 20px;
 }
 
+.mk-source-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  padding: 0 20px 16px;
+}
+
+.mk-source-summary div {
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 12px;
+  background: var(--color-bg-alt);
+}
+
+.mk-source-summary strong {
+  display: block;
+  font-size: 20px;
+  margin-bottom: 2px;
+}
+
+.mk-source-summary span {
+  color: var(--color-text-secondary);
+  font-size: 12px;
+}
+
 .mk-list-card {
   text-align: left;
   width: 100%;
@@ -441,6 +466,10 @@
   .mk-list-card {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .mk-source-summary {
+    grid-template-columns: 1fr;
   }
 
   .mk-provider-input {

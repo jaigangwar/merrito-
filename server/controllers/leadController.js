@@ -1,8 +1,10 @@
 import * as db from '../supabase.js';
 import { assertLeadPayload } from '../validate.js';
+import { sendWelcomeSMS, sendStageChangeSMS, isSMSConfigured } from '../services/smsService.js';
+import { sendWelcomeWhatsApp, sendWhatsApp, isWhatsAppConfigured } from '../services/whatsappService.js';
 
 // --- LEAD SCORING LOGIC ---
-function calculateLeadScore(lead) {
+export function calculateLeadScore(lead) {
   let score = 20; // Base score
   
   // Source weight
@@ -245,6 +247,24 @@ export const createLead = async (req, res) => {
       });
     }
 
+    // Send welcome SMS if configured
+    if (lead.phone && isSMSConfigured()) {
+      try {
+        await sendWelcomeSMS(lead);
+      } catch (e) {
+        console.error('SMS send failed:', e.message);
+      }
+    }
+
+    // Send welcome WhatsApp if configured
+    if (lead.phone && isWhatsAppConfigured()) {
+      try {
+        await sendWelcomeWhatsApp(lead);
+      } catch (e) {
+        console.error('WhatsApp send failed:', e.message);
+      }
+    }
+
     const counselor = lead.counselor_id ? await db.getCounselor(lead.counselor_id) : null;
     const course = lead.course_id ? await db.getCourse(lead.course_id) : null;
 
@@ -290,6 +310,33 @@ export const updateLead = async (req, res) => {
         type: 'stage_change',
         message: `${updated.first_name} ${updated.last_name} moved to ${stageLabels[updated.stage] || updated.stage}`
       });
+
+      // Send stage change SMS
+      if (updated.phone && isSMSConfigured()) {
+        try {
+          await sendStageChangeSMS(updated, updated.stage);
+        } catch (e) {
+          console.error('Stage change SMS failed:', e.message);
+        }
+      }
+
+      // Send stage change WhatsApp
+      if (updated.phone && isWhatsAppConfigured()) {
+        try {
+          const stageMessages = {
+            counseling_scheduled: `Hi ${updated.first_name}, your counseling session is scheduled. Our counselor will contact you soon. 📞`,
+            application_submitted: `Hi ${updated.first_name}, your application has been received. We'll review it shortly. ✅`,
+            documents_verified: `Hi ${updated.first_name}, your documents are verified. Admission process is in progress. 📋`,
+            admitted: `Congratulations ${updated.first_name}! 🎉 You've been admitted to RBMI. Check your email for details. 🎓`,
+            enrolled: `Welcome to RBMI, ${updated.first_name}! 🎓 Your enrollment is complete. See you on campus! 📚`
+          };
+          const msg = stageMessages[updated.stage];
+          if (msg) await sendWhatsApp(updated.phone, msg);
+        } catch (e) {
+          console.error('Stage change WhatsApp failed:', e.message);
+        }
+      }
+
       const task = await createAutomatedTaskForLead(updated, updated.stage);
       if (task) {
         await db.createActivity({

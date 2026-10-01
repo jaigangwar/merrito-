@@ -46,6 +46,8 @@ function taskTone(task) {
 export async function renderDashboard(container) {
   container.innerHTML = renderSkeleton();
 
+  const user = JSON.parse(sessionStorage.getItem('rbmi_user') || '{}');
+
   try {
     const now = Date.now();
     let stats;
@@ -83,6 +85,12 @@ export async function renderDashboard(container) {
             <p class="page-subtitle">Welcome back! Here's your admissions overview.</p>
           </div>
           <div class="header-actions">
+            ${user.role === 'admin' ? `
+              <select id="dashboard-counselor-select" class="form-input" style="font-size:13px;padding:6px 12px;width:200px;margin-right:12px;border-radius:8px;">
+                <option value="">All Counselors</option>
+                ${counselorStats.map(c => `<option value="${c.id}">${c.name || c.email}</option>`).join('')}
+              </select>
+            ` : ''}
             <div class="date-badge">
               <i data-lucide="calendar"></i>
               <span>${new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</span>
@@ -218,7 +226,7 @@ export async function renderDashboard(container) {
               <thead>
                 <tr><th>Counselor</th><th>Department</th><th>Leads Assigned</th><th>Conversions</th><th>Conv. Rate</th><th>Rating</th></tr>
               </thead>
-              <tbody>
+              <tbody id="leaderboard-tbody">
                 ${counselorStats.sort((a, b) => {
                   const rateA = a.leads_assigned > 0 ? a.conversions / a.leads_assigned : 0;
                   const rateB = b.leads_assigned > 0 ? b.conversions / b.leads_assigned : 0;
@@ -256,6 +264,7 @@ export async function renderDashboard(container) {
 
     window.renderIcons();
 
+    // Done button event handler
     container.querySelectorAll('.dashboard-task-done').forEach(btn => {
       btn.addEventListener('click', async () => {
         btn.disabled = true;
@@ -265,16 +274,40 @@ export async function renderDashboard(container) {
       });
     });
 
-    // Render charts
-    setTimeout(() => {
-      createLineChart('chart-lead-trends', stats.monthly.labels, [
-        { label: 'Enquiries', data: stats.monthly.enquiries, color: '#6366f1', bgColor: 'rgba(99,102,241,0.08)', fill: true },
-        { label: 'Admissions', data: stats.monthly.admissions, color: '#10b981', bgColor: 'rgba(16,185,129,0.08)', fill: true },
-        { label: 'Enrollments', data: stats.monthly.enrollments, color: '#f59e0b', bgColor: 'rgba(245,158,11,0.08)', fill: true }
+    // Setup filter event handler for Admin
+    const cSelector = container.querySelector('#dashboard-counselor-select');
+    if (cSelector) {
+      cSelector.addEventListener('change', async () => {
+        const cId = cSelector.value;
+        try {
+          const filteredStats = await fetchDashboardStats(cId);
+          updateDashboardUI(filteredStats);
+        } catch (e) {
+          console.error('Failed to filter dashboard stats:', e);
+        }
+      });
+    }
+
+    // Function to update stats and charts on selection change
+    function updateDashboardUI(statsData) {
+      container.querySelector('#kpi-total-leads .kpi-value').textContent = statsData.totalLeads;
+      container.querySelector('#kpi-active-apps .kpi-value').textContent = statsData.activeApplications;
+      container.querySelector('#kpi-admissions .kpi-value').textContent = statsData.admissions;
+      container.querySelector('#kpi-conversion .kpi-value').textContent = statsData.conversionRate + '%';
+
+      renderCharts(statsData);
+    }
+
+    // Render charts helper
+    function renderCharts(statsData) {
+      createLineChart('chart-lead-trends', statsData.monthly.labels, [
+        { label: 'Enquiries', data: statsData.monthly.enquiries, color: '#6366f1', bgColor: 'rgba(99,102,241,0.08)', fill: true },
+        { label: 'Admissions', data: statsData.monthly.admissions, color: '#10b981', bgColor: 'rgba(16,185,129,0.08)', fill: true },
+        { label: 'Enrollments', data: statsData.monthly.enrollments, color: '#f59e0b', bgColor: 'rgba(245,158,11,0.08)', fill: true }
       ]);
 
       const stageLabels = STAGE_META.map(s => s.label);
-      const stageValues = STAGE_META.map(s => stats.stageDistribution[s.id] || 0);
+      const stageValues = STAGE_META.map(s => statsData.stageDistribution[s.id] || 0);
       const stageColors = STAGE_META.map(s => s.color);
       
       createDoughnutChart('chart-funnel', stageLabels, stageValues, stageColors);
@@ -283,7 +316,10 @@ export async function renderDashboard(container) {
         indexAxis: 'x',
         plugins: { legend: { display: false } }
       });
-    }, 100);
+    }
+
+    // Initial render charts
+    setTimeout(() => renderCharts(stats), 100);
 
   } catch (err) {
     container.innerHTML = `

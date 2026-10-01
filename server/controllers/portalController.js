@@ -1,10 +1,15 @@
 import * as appStore from '../appStore.js';
 import * as db from '../supabase.js';
+import { REAL_DATA_MODE } from '../supabase.js';
 import { getDB, saveDB, generateId } from '../db.js';
 
 // Helper functions that were in index.js but are needed for marketing/portal
 function ensureMarketingModules() {
   const dbData = getDB();
+  if (REAL_DATA_MODE) {
+    if (!Array.isArray(dbData.notificationCenter)) dbData.notificationCenter = [];
+    return dbData;
+  }
   let changed = false;
   const now = new Date().toISOString();
   const leads = dbData.leads || [];

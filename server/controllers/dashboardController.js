@@ -2,7 +2,13 @@ import * as db from '../supabase.js';
 
 export const getStats = async (req, res) => {
   try {
-    const leads = await db.getLeads({});
+    const filterCounselorId = req.user.role === 'counselor' ? req.user.counselor_id : req.query.counselor_id;
+    let leads;
+    if (filterCounselorId) {
+      leads = await db.getLeads({ counselor_id: filterCounselorId });
+    } else {
+      leads = await db.getLeads({});
+    }
     const counselors = await db.getCounselors();
 
     const totalLeads = leads.length;
@@ -30,10 +36,11 @@ export const getStats = async (req, res) => {
     const monthlyAdmissions = months.map(m => leads.filter(l => { const d = new Date(l.updated_at); return d.getFullYear() === m.year && d.getMonth() === m.month && (l.stage === 'admitted' || l.stage === 'enrolled'); }).length);
     const monthlyEnrollments = months.map(m => leads.filter(l => { const d = new Date(l.updated_at); return d.getFullYear() === m.year && d.getMonth() === m.month && l.stage === 'enrolled'; }).length);
 
+    const globalLeads = req.user.role === 'counselor' ? await db.getLeads({}) : leads;
     const counselorStats = counselors.map(c => {
-      const assigned = leads.filter(l => l.counselor_id === c.id).length;
-      const converted = leads.filter(l => l.counselor_id === c.id && (l.stage === 'admitted' || l.stage === 'enrolled')).length;
-      return { ...c, leads_assigned: assigned, conversions: converted, active_leads: leads.filter(l => l.counselor_id === c.id && !['admitted', 'enrolled'].includes(l.stage)).length };
+      const assigned = globalLeads.filter(l => l.counselor_id === c.id).length;
+      const converted = globalLeads.filter(l => l.counselor_id === c.id && (l.stage === 'admitted' || l.stage === 'enrolled')).length;
+      return { ...c, leads_assigned: assigned, conversions: converted, active_leads: globalLeads.filter(l => l.counselor_id === c.id && !['admitted', 'enrolled'].includes(l.stage)).length };
     });
 
     res.json({

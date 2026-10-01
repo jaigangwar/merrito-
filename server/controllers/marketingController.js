@@ -1,8 +1,18 @@
 import { getDB, saveDB, generateId } from '../db.js';
+import { REAL_DATA_MODE } from '../supabase.js';
 import * as appStore from '../appStore.js';
 
 export function ensureMarketingModules() {
   const dbData = getDB();
+  if (REAL_DATA_MODE) {
+    for (const key of ['communicationTemplates', 'communicationCampaigns', 'callLogs', 'autoFollowUps', 'broadcastMessages', 'studentInbox', 'chatThreads', 'notificationCenter']) {
+      if (!Array.isArray(dbData[key])) dbData[key] = [];
+    }
+    if (!dbData.communicationIntegrations || typeof dbData.communicationIntegrations !== 'object') {
+      dbData.communicationIntegrations = {};
+    }
+    return dbData;
+  }
   let changed = false;
   const now = new Date().toISOString();
   const leads = dbData.leads || [];

@@ -1,0 +1,107 @@
+/* ===== CALL LOGS CSS ===== */
+.cl-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.cl-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 900px) {
+  .cl-kpis {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 500px) {
+  .cl-kpis {
+    grid-template-columns: 1fr;
+  }
+}
+
+.cl-kpi-card {
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+}
+
+.cl-kpi-icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.cl-kpi-val {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--color-text);
+}
+
+.cl-kpi-label {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+.cl-filters {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--color-border-light);
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.cl-avatar-text {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.cl-play-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--color-primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.cl-play-btn:hover {
+  text-decoration: underline;
+}
+
+/* Direction badges */
+.badge-outbound { background: #dbeafe; color: #1d4ed8; }
+.badge-inbound { background: #f3e8ff; color: #7e22ce; }
+
+/* Status badges */
+.badge-completed { background: #dcfce7; color: #15803d; }
+.badge-missed { background: #fee2e2; color: #b91c1c; }
+.badge-busy { background: #fef3c7; color: #b45309; }
+
+:root.dark-mode .badge-outbound { background: rgba(59,130,246,0.15); color: #60a5fa; }
+:root.dark-mode .badge-inbound { background: rgba(168,85,247,0.15); color: #c084fc; }
+:root.dark-mode .badge-completed { background: rgba(34,197,94,0.15); color: #4ade80; }
+:root.dark-mode .badge-missed { background: rgba(239,68,68,0.15); color: #f87171; }
+:root.dark-mode .badge-busy { background: rgba(245,158,11,0.15); color: #fbbf24; }

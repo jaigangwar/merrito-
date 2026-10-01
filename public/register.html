@@ -14,154 +14,309 @@
       --text-muted: #64748b;
       --card-bg: #ffffff;
       --border: #e2e8f0;
+      --success: #059669;
+      --error: #dc2626;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
-    body { background-color: var(--bg); color: var(--text); padding: 40px 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-    
-    .container { width: 100%; max-width: 500px; background: var(--card-bg); padding: 40px; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1); }
-    
+    body { background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); padding: 40px 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+
+    .container { width: 100%; max-width: 520px; background: var(--card-bg); padding: 40px; border-radius: 20px; box-shadow: 0 20px 60px -8px rgba(0,0,0,0.12), 0 4px 12px -2px rgba(0,0,0,0.05); }
+
     .header { text-align: center; margin-bottom: 32px; }
-    .header img { height: 48px; margin-bottom: 16px; }
-    .header h1 { font-size: 24px; font-weight: 800; color: #1e293b; margin-bottom: 8px; }
-    .header p { color: var(--text-muted); font-size: 14px; }
-    
-    .form-group { margin-bottom: 20px; }
-    .form-label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; color: #334155; }
-    .form-input { width: 100%; padding: 12px 16px; border: 1px solid var(--border); border-radius: 8px; font-size: 15px; transition: all 0.2s; outline: none; }
-    .form-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
-    
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    
-    .btn { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 700; cursor: pointer; transition: all 0.2s; margin-top: 12px; }
-    .btn:hover { background: var(--primary-hover); transform: translateY(-1px); }
+    .header img { height: 56px; margin-bottom: 16px; border-radius: 50%; }
+    .header h1 { font-size: 26px; font-weight: 800; color: #1e293b; margin-bottom: 6px; background: linear-gradient(135deg, #1e40af, #6366f1); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .header p { color: var(--text-muted); font-size: 14px; line-height: 1.6; }
+
+    .form-group { margin-bottom: 18px; }
+    .form-label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #334155; }
+    .form-input { width: 100%; padding: 12px 16px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 15px; transition: all 0.2s; outline: none; background: #f8fafc; }
+    .form-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); background: #fff; }
+    .form-input.error { border-color: var(--error); }
+    .form-error { font-size: 12px; color: var(--error); margin-top: 4px; display: none; }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+    .btn { width: 100%; padding: 14px; background: linear-gradient(135deg, #4f46e5, #6366f1); color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 700; cursor: pointer; transition: all 0.2s; margin-top: 8px; font-family: inherit; }
+    .btn:hover { background: linear-gradient(135deg, #4338ca, #4f46e5); transform: translateY(-1px); box-shadow: 0 8px 20px -4px rgba(79,70,229,0.3); }
     .btn:active { transform: translateY(0); }
-    .btn:disabled { background: #94a3b8; cursor: not-allowed; }
+    .btn:disabled { background: #94a3b8; cursor: not-allowed; transform: none; box-shadow: none; }
 
-    .success-msg { display: none; text-align: center; padding: 20px; }
-    .success-msg h2 { color: #059669; margin-bottom: 12px; }
-    .success-msg p { color: var(--text-muted); line-height: 1.6; }
+    .btn-loading { display: none; align-items: center; justify-content: center; gap: 8px; }
+    .btn-loading .spinner { width: 18px; height: 18px; border: 2.5px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.6s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
-    .footer-text { text-align: center; margin-top: 24px; font-size: 12px; color: var(--text-muted); }
+    .success-container { display: none; text-align: center; padding: 10px; }
+    .success-icon { width: 72px; height: 72px; background: linear-gradient(135deg, #059669, #10b981); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 32px; color: #fff; box-shadow: 0 12px 32px -8px rgba(5,150,105,0.3); }
+    .success-container h2 { font-size: 24px; font-weight: 800; color: #059669; margin-bottom: 8px; }
+    .success-container p { color: var(--text-muted); line-height: 1.7; font-size: 14px; margin-bottom: 8px; }
+    .success-container .highlight { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 16px; margin: 16px 0; font-size: 13px; color: #166534; }
+    .success-container .highlight strong { display: block; font-size: 15px; margin-bottom: 4px; }
+
+    .footer-text { text-align: center; margin-top: 24px; font-size: 12px; color: #94a3b8; line-height: 1.6; }
+
+    .alert { padding: 12px 16px; border-radius: 10px; font-size: 13px; margin-bottom: 16px; display: none; }
+    .alert.error { background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; display: block; }
+    .alert.info { background: #eff6ff; border: 1px solid #bfdbfe; color: #2563eb; display: block; }
+
+    .badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; background: #ede9fe; color: #7c3aed; }
   </style>
 </head>
 <body>
 
   <div class="container" id="form-container">
     <div class="header">
-      <img src="/logo.png" alt="RBMI Logo" onerror="this.src='https://via.placeholder.com/150x50?text=RBMI+GROUP'">
-      <h1>Join RBMI Group</h1>
-      <p>Secure your future with North India's premier educational institute.</p>
+      <img src="/logo.png" alt="RBMI Logo">
+      <h1>Apply for Admission 2026</h1>
+      <p>Secure your future at <strong>Rakshpal Bahadur Management Institute</strong> — North India's premier educational institute.</p>
     </div>
 
-    <form id="admission-form">
+    <div id="form-alert" class="alert"></div>
+
+    <form id="admission-form" novalidate>
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">First Name</label>
-          <input type="text" name="first_name" class="form-input" placeholder="Aarav" required>
+          <label class="form-label">First Name <span style="color:#dc2626;">*</span></label>
+          <input type="text" name="first_name" class="form-input" placeholder="Aarav" required autocomplete="given-name">
+          <div class="form-error" id="error-first_name">Please enter your first name</div>
         </div>
         <div class="form-group">
-          <label class="form-label">Last Name</label>
-          <input type="text" name="last_name" class="form-input" placeholder="Mehta" required>
+          <label class="form-label">Last Name <span style="color:#dc2626;">*</span></label>
+          <input type="text" name="last_name" class="form-input" placeholder="Mehta" required autocomplete="family-name">
+          <div class="form-error" id="error-last_name">Please enter your last name</div>
         </div>
       </div>
 
       <div class="form-group">
-        <label class="form-label">Email Address</label>
-        <input type="email" name="email" class="form-input" placeholder="aarav.m@example.com" required>
+        <label class="form-label">Email Address <span style="color:#dc2626;">*</span></label>
+        <input type="email" name="email" class="form-input" placeholder="aarav.m@example.com" required autocomplete="email">
+        <div class="form-error" id="error-email">Please enter a valid email address</div>
       </div>
 
       <div class="form-group">
-        <label class="form-label">Phone Number</label>
-        <input type="tel" name="phone" class="form-input" placeholder="+91 XXXXX XXXXX" required>
+        <label class="form-label">Phone Number <span style="color:#dc2626;">*</span></label>
+        <input type="tel" name="phone" class="form-input" placeholder="+91 XXXXX XXXXX" required autocomplete="tel">
+        <div class="form-error" id="error-phone">Please enter a valid 10-digit phone number</div>
       </div>
 
-      <div class="form-group">
-        <label class="form-label">City</label>
-        <input type="text" name="city" class="form-input" placeholder="Bareilly / Lucknow / Noida">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">City</label>
+          <input type="text" name="city" class="form-input" placeholder="Bareilly / Lucknow / Noida" autocomplete="address-level2">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Interested Course <span style="color:#dc2626;">*</span></label>
+          <select name="course" class="form-input" required id="course-select">
+            <option value="">Loading courses...</option>
+          </select>
+          <div class="form-error" id="error-course">Please select a course</div>
+        </div>
       </div>
 
-      <div class="form-group">
-        <label class="form-label">Interested Course</label>
-        <select name="course" class="form-input" required id="course-select">
-          <option value="">Select a program</option>
-          <option>MBA (General)</option>
-          <option>B.Tech CSE</option>
-          <option>BBA</option>
-          <option>BCA</option>
-          <option>MCA</option>
-          <option>B.Pharm</option>
-        </select>
-      </div>
+      <input type="hidden" name="source" value="Website Form">
 
-      <button type="submit" class="btn" id="submit-btn">Apply Now</button>
+      <button type="submit" class="btn" id="submit-btn">
+        <span id="btn-text">Apply Now</span>
+        <span class="btn-loading" id="btn-loading">
+          <span class="spinner"></span>
+          Submitting...
+        </span>
+      </button>
     </form>
 
     <div class="footer-text">
-      By clicking "Apply Now", you agree to be contacted by RBMI Group admissions team.
+      <span class="badge">RBMI</span> By applying, you agree to be contacted by RBMI admissions team.
+      <br>📞 <strong>+91 581 250 0000</strong> &nbsp;|&nbsp; 🌐 <strong>rbmi.edu.in</strong>
     </div>
   </div>
 
-  <div class="container" id="success-container" style="display: none;">
-    <div class="success-msg">
-      <div style="font-size: 64px; margin-bottom: 20px;">✅</div>
+  <div class="container" id="success-container">
+    <div class="success-container">
+      <div class="success-icon">✓</div>
       <h2>Application Received!</h2>
-      <p>Thank you for your interest in RBMI Group. Our admissions counselor will contact you within 24 hours to guide you through the next steps.</p>
-      <button class="btn" style="background: #f1f5f9; color: #475569; margin-top: 32px;" onclick="window.location.reload()">Back to Form</button>
+      <p>Thank you for applying to <strong id="success-course">RBMI Group</strong>.</p>
+      <div class="highlight">
+        <strong>📞 What happens next?</strong>
+        Our admissions counselor will contact you within 24 hours to guide you through the admission process, document requirements, and scholarship options.
+      </div>
+      <p style="margin-top:12px;font-size:13px;">📧 Check your email for the confirmation details.</p>
+      <button class="btn" style="background: #f1f5f9; color: #475569; box-shadow: none; margin-top: 24px;" onclick="window.location.reload()">← Submit Another Application</button>
     </div>
   </div>
 
   <script>
     const form = document.getElementById('admission-form');
     const submitBtn = document.getElementById('submit-btn');
+    const btnText = document.getElementById('btn-text');
+    const btnLoading = document.getElementById('btn-loading');
     const formContainer = document.getElementById('form-container');
     const successContainer = document.getElementById('success-container');
+    const formAlert = document.getElementById('form-alert');
+    const courseSelect = document.getElementById('course-select');
+    const successCourse = document.getElementById('success-course');
+
+    function showError(fieldId, message) {
+      const el = document.getElementById('error-' + fieldId);
+      const input = form.querySelector('[name="' + fieldId + '"]');
+      if (el) { el.style.display = 'block'; el.textContent = message || el.textContent; }
+      if (input) input.classList.add('error');
+    }
+
+    function clearErrors() {
+      document.querySelectorAll('.form-error').forEach(e => e.style.display = 'none');
+      document.querySelectorAll('.form-input.error').forEach(e => e.classList.remove('error'));
+      formAlert.style.display = 'none';
+      formAlert.className = 'alert';
+    }
+
+    function validateForm(data) {
+      let valid = true;
+      clearErrors();
+
+      if (!data.first_name || data.first_name.trim().length < 2) {
+        showError('first_name', 'Please enter your first name (min 2 characters)');
+        valid = false;
+      }
+
+      if (!data.last_name || data.last_name.trim().length < 2) {
+        showError('last_name', 'Please enter your last name (min 2 characters)');
+        valid = false;
+      }
+
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!data.email || !emailRegex.test(data.email)) {
+        showError('email', 'Please enter a valid email address');
+        valid = false;
+      }
+
+      const phoneDigits = data.phone ? data.phone.replace(/\D/g, '') : '';
+      if (phoneDigits.length < 10) {
+        showError('phone', 'Please enter a valid 10-digit phone number');
+        valid = false;
+      }
+
+      if (!data.course) {
+        showError('course', 'Please select a course');
+        valid = false;
+      }
+
+      return valid;
+    }
+
+    function setLoading(loading) {
+      submitBtn.disabled = loading;
+      btnText.style.display = loading ? 'none' : 'inline';
+      btnLoading.style.display = loading ? 'flex' : 'none';
+    }
+
+    async function loadCourses() {
+      try {
+        const res = await fetch('/api/courses');
+        if (res.ok) {
+          const courses = await res.json();
+          courseSelect.innerHTML = '<option value="">Select a program</option>' +
+            courses.map(c => `<option value="${c.name}">${c.name} — ${c.code}</option>`).join('');
+        } else {
+          courseSelect.innerHTML = '<option value="">Select a program</option>' +
+            ['MBA (General)', 'BBA', 'BCA', 'MCA', 'B.Com', 'B.Tech CSE', 'B.Tech AI & DS']
+              .map(c => `<option value="${c}">${c}</option>`).join('');
+        }
+      } catch (e) {
+        courseSelect.innerHTML = '<option value="">Select a program</option>' +
+          ['MBA (General)', 'BBA', 'BCA', 'MCA', 'B.Com', 'B.Tech CSE', 'B.Tech AI & DS']
+            .map(c => `<option value="${c}">${c}</option>`).join('');
+      }
+    }
+
+    // Track UTM parameters
+    function getUTMParams() {
+      const params = new URLSearchParams(window.location.search);
+      const utm = {};
+      ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'].forEach(key => {
+        const val = params.get(key);
+        if (val) utm[key] = val;
+      });
+      return utm;
+    }
 
     form.onsubmit = async (e) => {
       e.preventDefault();
-      submitBtn.disabled = true;
-      submitBtn.innerText = 'Submitting...';
+      clearErrors();
 
       const formData = new FormData(form);
       const data = Object.fromEntries(formData.entries());
-      data.source = 'Website Form';
+
+      if (!validateForm(data)) return;
+
+      const utm = getUTMParams();
+      const payload = { ...data, ...utm };
+      if (payload.source === 'Website Form' && utm.utm_source) {
+        payload.source = 'Website';
+        payload.notes = `UTM: ${utm.utm_source}${utm.utm_campaign ? ' / Campaign: ' + utm.utm_campaign : ''}`;
+      }
+
+      setLoading(true);
 
       try {
         const response = await fetch('/api/webhook/lead', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
+          body: JSON.stringify(payload)
         });
 
         if (response.ok) {
+          const result = await response.json();
+          successCourse.textContent = data.course || 'RBMI Group';
           formContainer.style.display = 'none';
           successContainer.style.display = 'block';
+          window.scrollTo({ top: 0, behavior: 'smooth' });
         } else {
           const err = await response.json();
-          alert('Error: ' + err.error);
+          if (err.duplicate) {
+            formAlert.className = 'alert info';
+            formAlert.textContent = 'You have already applied! Our team will contact you shortly.';
+            formAlert.style.display = 'block';
+          } else {
+            formAlert.className = 'alert error';
+            formAlert.textContent = err.error || 'Something went wrong. Please try again.';
+            formAlert.style.display = 'block';
+          }
         }
       } catch (error) {
-        alert('Could not connect to the server. Please check if the server is running.');
+        formAlert.className = 'alert error';
+        formAlert.textContent = 'Could not connect to server. Please try again later or call +91 581 250 0000.';
+        formAlert.style.display = 'block';
       } finally {
-        submitBtn.disabled = false;
-        submitBtn.innerText = 'Apply Now';
+        setLoading(false);
       }
     };
 
-    // Load real courses if possible
-    async function fetchCourses() {
-      try {
-        const res = await fetch('/api/courses'); // Note: This might require auth if the API is strict, but usually public forms use a specialized endpoint
-        if (res.ok) {
-          const courses = await res.json();
-          const select = document.getElementById('course-select');
-          select.innerHTML = '<option value="">Select a program</option>' + 
-            courses.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+    // Input validation on blur
+    form.querySelectorAll('.form-input').forEach(input => {
+      input.addEventListener('blur', () => {
+        const name = input.name;
+        const errorEl = document.getElementById('error-' + name);
+        if (input.value && errorEl) {
+          input.classList.remove('error');
+          errorEl.style.display = 'none';
         }
-      } catch (e) {
-        // Fallback to hardcoded courses in HTML
-      }
-    }
-    // fetchCourses(); // Skip for now to keep it simple and avoid auth issues
+      });
+      input.addEventListener('input', () => {
+        input.classList.remove('error');
+        const errorEl = document.getElementById('error-' + input.name);
+        if (errorEl) errorEl.style.display = 'none';
+      });
+    });
+
+    // Auto-format phone
+    const phoneInput = form.querySelector('[name="phone"]');
+    phoneInput.addEventListener('input', (e) => {
+      let val = e.target.value.replace(/[^\d+]/g, '');
+      if (val.length > 1 && !val.startsWith('+')) val = '+' + val;
+      if (val.length > 15) val = val.slice(0, 15);
+      e.target.value = val;
+    });
+
+    loadCourses();
   </script>
 </body>
 </html>

@@ -15,6 +15,21 @@ import formRoutes from './formRoutes.js';
 import activityRoutes from './activityRoutes.js';
 import taskRoutes from './taskRoutes.js';
 import aiRoutes from './aiRoutes.js';
+import importRoutes from './importRoutes.js';
+import interviewRoutes from './interviewRoutes.js';
+import paymentGatewayRoutes from './paymentGatewayRoutes.js';
+import savedFilterRoutes from './savedFilterRoutes.js';
+import batchRoutes from './batchRoutes.js';
+import admissionTestRoutes from './admissionTestRoutes.js';
+import scholarshipRoutes from './scholarshipRoutes.js';
+import advancedReportRoutes from './advancedReportRoutes.js';
+import notificationRoutes from './notificationRoutes.js';
+import utmTrackingRoutes from './utmTrackingRoutes.js';
+import leadDistributionRoutes from './leadDistributionRoutes.js';
+import multiLanguageRoutes from './multiLanguageRoutes.js';
+import formBuilderRoutes from './formBuilderRoutes.js';
+import chatRoutes from './chatRoutes.js';
+import dripCampaignRoutes from './dripCampaignRoutes.js';
 
 const router = express.Router();
 
@@ -34,5 +49,20 @@ router.use('/', formRoutes); // Handles /form-templates and /campaigns
 router.use('/activities', activityRoutes);
 router.use('/tasks', taskRoutes);
 router.use('/ai', aiRoutes);
+router.use('/import', importRoutes);
+router.use('/interviews', interviewRoutes);
+router.use('/payment-gateway', paymentGatewayRoutes);
+router.use('/saved-filters', savedFilterRoutes);
+router.use('/batches', batchRoutes);
+router.use('/admission-tests', admissionTestRoutes);
+router.use('/scholarships', scholarshipRoutes);
+router.use('/reports', advancedReportRoutes);
+router.use('/notifications', notificationRoutes);
+router.use('/utm', utmTrackingRoutes);
+router.use('/lead-distribution', leadDistributionRoutes);
+router.use('/i18n', multiLanguageRoutes);
+router.use('/forms', formBuilderRoutes);
+router.use('/chat', chatRoutes);
+router.use('/drip-campaigns', dripCampaignRoutes);
 
 export default router;

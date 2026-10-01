@@ -120,3 +120,50 @@ export const updatePayment = async (req, res) => {
     res.status(code).json({ error: error.message });
   }
 };
+
+export const getLetterTemplates = async (req, res) => {
+  try {
+    const items = await appStore.listLetterTemplates();
+    res.json(items);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const createLetterTemplate = async (req, res) => {
+  try {
+    const item = await appStore.insertLetterTemplate(req.body);
+    res.status(201).json(item);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const updateLetterTemplate = async (req, res) => {
+  try {
+    const item = await appStore.patchLetterTemplate(req.params.id, req.body);
+    res.json(item);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const getOfferLetters = async (req, res) => {
+  try {
+    const items = await appStore.listOfferLetters(req.query.application_id);
+    res.json(items);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const generateOfferLetter = async (req, res) => {
+  try {
+    const { applicationId, templateId } = req.body;
+    const item = await appStore.generateOfferLetter(applicationId, templateId);
+    res.status(201).json(item);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+

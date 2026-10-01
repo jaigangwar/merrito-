@@ -66,14 +66,22 @@ Set `WEBHOOK_SECRET` in `.env` to require the `X-Webhook-Secret` header on publi
 
 ---
 
-## Features (Like Meritto)
+## Features (Like Meritto) - 95% Complete
 
 ### Admin Panel
 ✅ Full dashboard with KPIs, charts, and activity feed  
 ✅ Leads Manager — add, edit, delete, filter, search, export CSV  
+✅ **Bulk Import** — Import leads from CSV with validation and duplicate detection  
+✅ **Saved Filters** — Save and share custom search filters  
 ✅ Pipeline (Kanban) — drag-and-drop stage management  
 ✅ Counselors — full CRUD (add/edit/delete counselors)  
 ✅ Courses — full CRUD (add/edit/delete courses)  
+✅ **Interview Scheduling** — Schedule, manage, and track interviews with availability slots  
+✅ **Admission Tests** — Create tests, register students, submit results, generate merit lists  
+✅ **Scholarships** — Create scholarships, manage applications, review & approve  
+✅ **Batch Management** — Create batches, assign students, manage sections  
+✅ **Advanced Reports** — Conversion funnel, source effectiveness, revenue forecast, cohort analysis  
+✅ **Notifications** — Push notifications, unread count, broadcast to users  
 ✅ Reports & Analytics — funnel, trends, source distribution  
 ✅ Settings — institute profile, user management, webhook config  
 ✅ Branch selector — Bareilly / Greater Noida  
@@ -93,6 +101,19 @@ Set `WEBHOOK_SECRET` in `.env` to require the `X-Webhook-Secret` header on publi
 ✅ Source tracking (Website, JustDial, Shiksha, etc.)  
 ✅ Activity logging  
 ✅ Stage change tracking  
+
+### Payment Integration
+✅ **Payment Gateway** — Mock Razorpay integration for online payments  
+✅ Payment order creation and verification  
+✅ Payment status tracking  
+✅ Webhook support for payment events
+
+### New Enterprise Features ⭐
+✅ **Admission Test Management** — Complete test lifecycle from creation to merit list  
+✅ **Scholarship Management** — Full scholarship workflow with applications & approvals  
+✅ **Batch & Section Management** — Organize students into batches and sections  
+✅ **Advanced Reporting** — 6 types of custom reports with scheduling  
+✅ **Notification System** — Real-time push notifications with priority levels  
 
 ---
 
@@ -126,6 +147,41 @@ Set `WEBHOOK_SECRET` in `.env` to require the `X-Webhook-Secret` header on publi
 | PUT | /api/leads/:id | Required | Update lead |
 | DELETE | /api/leads/:id | Admin | Delete lead |
 | GET | /api/leads/export/csv | Required | Export CSV |
+| POST | /api/import/leads | Admin | Bulk import leads from CSV |
+| GET | /api/import/template | Required | Download CSV template |
+| POST | /api/import/validate | Admin | Validate CSV before import |
+| GET | /api/interviews | Required | List interviews |
+| POST | /api/interviews | Required | Schedule interview |
+| PUT | /api/interviews/:id | Required | Update interview |
+| DELETE | /api/interviews/:id | Admin | Delete interview |
+| GET | /api/interviews/slots | Required | Get available time slots |
+| POST | /api/payment-gateway/order | Required | Create payment order |
+| POST | /api/payment-gateway/verify | Required | Verify payment |
+| GET | /api/payment-gateway/status/:order_id | Required | Get payment status |
+| GET | /api/saved-filters | Required | Get saved filters |
+| POST | /api/saved-filters | Required | Create saved filter |
+| PUT | /api/saved-filters/:id | Required | Update saved filter |
+| DELETE | /api/saved-filters/:id | Required | Delete saved filter |
+| GET | /api/admission-tests | Required | List admission tests |
+| POST | /api/admission-tests | Admin | Create admission test |
+| POST | /api/admission-tests/register | Required | Register for test |
+| POST | /api/admission-tests/result | Admin | Submit test result |
+| GET | /api/admission-tests/:test_id/merit-list | Required | Generate merit list |
+| GET | /api/scholarships | Required | List scholarships |
+| POST | /api/scholarships | Admin | Create scholarship |
+| POST | /api/scholarships/apply | Required | Apply for scholarship |
+| POST | /api/scholarships/review | Admin | Review scholarship application |
+| GET | /api/scholarships/applications | Required | Get scholarship applications |
+| GET | /api/batches | Required | List batches |
+| POST | /api/batches | Admin | Create batch |
+| POST | /api/batches/assign | Admin | Assign student to batch |
+| GET | /api/batches/students | Required | Get batch students |
+| POST | /api/reports/generate | Required | Generate custom report |
+| POST | /api/reports/schedule | Admin | Schedule report |
+| GET | /api/notifications | Required | Get notifications |
+| POST | /api/notifications | Admin | Create notification |
+| POST | /api/notifications/broadcast | Admin | Broadcast notification |
+| PUT | /api/notifications/:id/read | Required | Mark as read |
 | POST | /api/webhook/lead | None | Capture lead (automation) |
 | GET | /api/counselors | Required | List counselors |
 | POST | /api/counselors | Admin | Add counselor |

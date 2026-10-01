@@ -8,9 +8,20 @@ export default defineConfig({
     strictPort: false,
     open: true,
     proxy: {
-      '/uploads': 'http://localhost:3001',
-      '/api': 'http://localhost:3001'
+      '/uploads': { target: 'http://localhost:3001', changeOrigin: true },
+      '/api': { target: 'http://localhost:3001', changeOrigin: true }
     }
   },
-  build: { outDir: 'dist' }
+  build: { 
+    outDir: 'dist',
+    sourcemap: true,
+    minify: 'esbuild',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['lucide']
+        }
+      }
+    }
+  }
 });

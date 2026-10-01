@@ -1,11 +1,12 @@
 import { getToken } from '../lib/auth.js';
 
 // ===== API CLIENT — RBMI CRM =====
-export const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:3001/api').replace(/\/$/, '');
+export const API_BASE = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '');
 const LOCAL_APPLICATIONS_KEY = 'rbmi_local_applications';
 const LOCAL_QUERIES_KEY = 'rbmi_local_queries';
 const LOCAL_PAYMENTS_KEY = 'rbmi_local_payments';
 const LOCAL_PORTAL_KEY = 'rbmi_local_portal_profiles';
+const LOCAL_SETTINGS_KEY = 'rbmi_local_settings';
 
 function getSessionUser() {
   try {
@@ -45,63 +46,11 @@ function getLocalCollection(key, seedFactory) {
   return seeded;
 }
 
-function seedLocalApplications() {
-  const user = getSessionUser();
-  const seed = [];
-  if (user?.role === 'student') {
-    seed.push({
-      id: 'local-app-student-demo',
-      user_id: user.id,
-      student_name: user.name,
-      email: user.email,
-      course_id: null,
-      course_name: 'Program not selected',
-      status: 'submitted',
-      documents_status: 'pending',
-      documents: seedLocalDocuments(),
-      counselor_name: 'Admissions team',
-      priority: 'medium',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    });
-  }
-  return seed;
-}
-
-function seedLocalQueries() {
-  const user = getSessionUser();
-  return [{
-    id: 'local-query-demo',
-    user_id: user?.id || null,
-    student_name: user?.name || 'Student',
-    subject: 'Admission help',
-    category: 'General',
-    status: 'open',
-    priority: 'medium',
-    message: 'Need help with the next admission step.',
-    response: '',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  }];
-}
-
-function seedLocalPayments() {
-  const user = getSessionUser();
-  return [{
-    id: 'local-payment-demo',
-    user_id: user?.role === 'student' ? user.id : null,
-    student_name: user?.name || 'Student',
-    title: 'Admission fee',
-    amount: 25000,
-    status: 'due',
-    method: 'Online',
-    due_date: '2026-05-15',
-    receipt_no: '',
-    installments: buildLocalInstallments(25000, 2, '2026-05-15'),
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  }];
-}
+// Local fallback collections start empty. Records appear only after a real
+// user creates them or the API returns real records.
+function seedLocalApplications() { return []; }
+function seedLocalQueries() { return []; }
+function seedLocalPayments() { return []; }
 
 function getLocalPortalProfiles() {
   return readLocal(LOCAL_PORTAL_KEY, {});
@@ -110,15 +59,39 @@ function getLocalPortalProfiles() {
 function saveLocalPortalProfiles(value) {
   writeLocal(LOCAL_PORTAL_KEY, value);
 }
-async function request(path, options = {}) {
+
+function getDefaultLocalSettings() {
+  return {
+    institute_name: 'Rakshpal Bahadur Management Institute',
+    short_name: 'RBMI',
+    email: 'admissions@rbmi.edu.in',
+    phone: '+91 581 250 0000',
+    address: 'Pilibhit Bypass Road, Bareilly, Uttar Pradesh - 243006',
+    website: 'https://www.rbmi.edu.in',
+    academic_year: '2025-2026',
+    city: 'Bareilly',
+    state: 'Uttar Pradesh'
+  };
+}
+
+function getLocalSettings() {
+  return { ...getDefaultLocalSettings(), ...readLocal(LOCAL_SETTINGS_KEY, {}) };
+}
+
+function saveLocalSettings(value) {
+  writeLocal(LOCAL_SETTINGS_KEY, value);
+}
+
+export async function request(path, options = {}) {
   const token = getToken();
+  const { headers: optionHeaders = {}, ...requestOptions } = options;
   const res = await fetch(`${API_BASE}${path}`, {
+    ...requestOptions,
     headers: {
       'Content-Type': 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...options.headers
-    },
-    ...options
+      ...optionHeaders
+    }
   });
 
   if (res.status === 401) {
@@ -245,23 +218,25 @@ export async function deleteTask(id) {
 export function exportLeadsCSV() {
   const token = getToken();
   const url = `${API_BASE}/leads/export/csv`;
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'rbmi-leads.csv';
-  // Use fetch to include auth header
   fetch(url, { headers: { Authorization: `Bearer ${token}` } })
     .then(r => r.blob())
     .then(blob => {
       const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
       a.href = blobUrl;
+      a.download = 'rbmi-leads.csv';
+      a.style.display = 'none';
+      document.body.appendChild(a);
       a.click();
+      document.body.removeChild(a);
       URL.revokeObjectURL(blobUrl);
     });
 }
 
 // ---- DASHBOARD ----
-export async function fetchDashboardStats() {
-  return request(`/dashboard/stats?_=${Date.now()}`);
+export async function fetchDashboardStats(counselorId = '') {
+  const param = counselorId ? `&counselor_id=${encodeURIComponent(counselorId)}` : '';
+  return request(`/dashboard/stats?_=${Date.now()}${param}`);
 }
 
 // ---- COUNSELORS ----
@@ -327,11 +302,27 @@ export async function deleteUser(id) {
 
 // ---- SETTINGS ----
 export async function fetchSettings() {
-  return request('/settings');
+  try {
+    const settings = await request('/settings');
+    const merged = { ...getDefaultLocalSettings(), ...settings };
+    saveLocalSettings(merged);
+    return merged;
+  } catch (error) {
+    return getLocalSettings();
+  }
 }
 
 export async function saveSettings(data) {
-  return request('/settings', { method: 'PUT', body: JSON.stringify(data) });
+  const merged = { ...getLocalSettings(), ...data };
+  try {
+    const settings = await request('/settings', { method: 'PUT', body: JSON.stringify(merged) });
+    const next = { ...getDefaultLocalSettings(), ...settings };
+    saveLocalSettings(next);
+    return next;
+  } catch (error) {
+    saveLocalSettings(merged);
+    return merged;
+  }
 }
 
 // ---- STUDENT PORTAL ----
@@ -444,15 +435,17 @@ export async function updateApplication(id, data) {
 export function exportApplicationsCSV() {
   const token = getToken();
   const url = `${API_BASE}/applications/export/csv`;
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'applications.csv';
   fetch(url, { headers: { Authorization: `Bearer ${token}` } })
     .then(r => r.blob())
     .then(blob => {
       const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
       a.href = blobUrl;
+      a.download = 'applications.csv';
+      a.style.display = 'none';
+      document.body.appendChild(a);
       a.click();
+      document.body.removeChild(a);
       URL.revokeObjectURL(blobUrl);
     });
 }
@@ -657,6 +650,8 @@ export async function createChatThread(data = {}) {
   return request('/marketing/chats', { method: 'POST', body: JSON.stringify(data) });
 }
 
+export const initiateChat = createChatThread;
+
 export async function sendChatMessage(threadId, data) {
   return request(`/marketing/chats/${threadId}/messages`, { method: 'POST', body: JSON.stringify(data) });
 }
@@ -681,18 +676,27 @@ export async function fetchPublishers() {
   return request('/marketing/publishers');
 }
 
+export async function simulateAutoLeads(count = 5) {
+  return request('/marketing/auto-leads/simulate', {
+    method: 'POST',
+    body: JSON.stringify({ count })
+  });
+}
+
 export function exportPaymentsCSV() {
   const token = getToken();
   const url = `${API_BASE}/payments/export/csv`;
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'payments.csv';
   fetch(url, { headers: { Authorization: `Bearer ${token}` } })
     .then(r => r.blob())
     .then(blob => {
       const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
       a.href = blobUrl;
+      a.download = 'payments.csv';
+      a.style.display = 'none';
+      document.body.appendChild(a);
       a.click();
+      document.body.removeChild(a);
       URL.revokeObjectURL(blobUrl);
     });
 }
@@ -731,7 +735,47 @@ export async function createFormTemplate(data) {
   return request('/form-templates', { method: 'POST', body: JSON.stringify(data) });
 }
 
+// ---- LETTER TEMPLATES ----
+export async function fetchLetterTemplates() {
+  return request('/letter-templates');
+}
+
+export async function createLetterTemplate(data) {
+  return request('/letter-templates', { method: 'POST', body: JSON.stringify(data) });
+}
+
+export async function updateLetterTemplate(id, data) {
+  return request(`/letter-templates/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+}
+
+// ---- OFFER LETTERS ----
+export async function fetchOfferLetters(applicationId = null) {
+  const params = applicationId ? `?application_id=${applicationId}` : '';
+  return request(`/offer-letters${params}`);
+}
+
+export async function generateOfferLetter(applicationId, templateId) {
+  return request('/offer-letters/generate', {
+    method: 'POST',
+    body: JSON.stringify({ applicationId, templateId })
+  });
+}
+
+// ---- WORKFLOW RULES ----
+export async function fetchWorkflowRules() {
+  return request('/settings/workflows');
+}
+
+export async function createWorkflowRule(data) {
+  return request('/settings/workflows', { method: 'POST', body: JSON.stringify(data) });
+}
+
+export async function updateWorkflowRule(id, data) {
+  return request(`/settings/workflows/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+}
+
 // ---- CAMPAIGNS ----
+
 export async function fetchCampaigns() {
   return request('/campaigns');
 }
@@ -743,4 +787,544 @@ export async function createCampaign(data) {
 // ---- AI ----
 export async function chatWithAI(history) {
   return request('/ai/chat', { method: 'POST', body: JSON.stringify({ history }) });
+}
+
+// ---- ADMISSION TESTS ----
+export async function fetchAdmissionTests() {
+  try {
+    const res = await request('/admission-tests');
+    return res && res.data ? res.data : (Array.isArray(res) ? res : []);
+  } catch (error) {
+    if (!shouldUseLocalAdmissionsFallback(error)) throw error;
+    return readLocal('rbmi_local_tests', [
+      { id: 'test-1', name: 'RBMI Scholarship & Entrance Test 2026', date: '2026-06-15', duration: 120, total_marks: 100, venue: 'Bareilly Campus, Block A', created_at: new Date().toISOString() },
+      { id: 'test-2', name: 'Management Aptitude Test (MAT) - Mock', date: '2026-06-20', duration: 180, total_marks: 200, venue: 'Online / Remote', created_at: new Date().toISOString() }
+    ]);
+  }
+}
+
+export async function createAdmissionTest(data) {
+  try {
+    return await request('/admission-tests', { method: 'POST', body: JSON.stringify(data) });
+  } catch (error) {
+    if (!shouldUseLocalAdmissionsFallback(error)) throw error;
+    const tests = await fetchAdmissionTests();
+    const newTest = { id: makeLocalId('test'), ...data, created_at: new Date().toISOString() };
+    tests.push(newTest);
+    writeLocal('rbmi_local_tests', tests);
+    return newTest;
+  }
+}
+
+export async function registerForTest(data) {
+  try {
+    return await request('/admission-tests/register', { method: 'POST', body: JSON.stringify(data) });
+  } catch (error) {
+    if (!shouldUseLocalAdmissionsFallback(error)) throw error;
+    const regs = readLocal('rbmi_local_test_regs', []);
+    const newReg = { id: makeLocalId('reg'), ...data, status: 'Registered', registered_at: new Date().toISOString() };
+    regs.push(newReg);
+    writeLocal('rbmi_local_test_regs', regs);
+    return newReg;
+  }
+}
+
+export async function submitTestResult(data) {
+  try {
+    return await request('/admission-tests/result', { method: 'POST', body: JSON.stringify(data) });
+  } catch (error) {
+    if (!shouldUseLocalAdmissionsFallback(error)) throw error;
+    const regs = readLocal('rbmi_local_test_regs', []);
+    const idx = regs.findIndex(r => r.test_id === data.test_id && r.student_email === data.student_email);
+    if (idx !== -1) {
+      regs[idx].marks_obtained = data.marks_obtained;
+      regs[idx].result_status = data.result_status || 'Pass';
+      writeLocal('rbmi_local_test_regs', regs);
+      return regs[idx];
+    }
+    const newReg = { id: makeLocalId('reg'), ...data, status: 'Result Submitted', registered_at: new Date().toISOString() };
+    regs.push(newReg);
+    writeLocal('rbmi_local_test_regs', regs);
+    return newReg;
+  }
+}
+
+export async function fetchTestRegistrations() {
+  try {
+    const res = await request('/admission-tests/registrations');
+    return res && res.data ? res.data : (Array.isArray(res) ? res : []);
+  } catch (error) {
+    if (!shouldUseLocalAdmissionsFallback(error)) throw error;
+    const user = getSessionUser();
+    let regs = readLocal('rbmi_local_test_regs', [
+      { id: 'reg-1', test_id: 'test-1', test_name: 'RBMI Scholarship & Entrance Test 2026', student_name: 'Rahul Sharma', student_email: 'rahul@gmail.com', status: 'Registered', registered_at: new Date().toISOString() }
+    ]);
+    if (user?.role === 'student') {
+      regs = regs.filter(r => r.student_email === user.email);
+    }
+    return regs;
+  }
+}
+
+export async function fetchMeritList(testId) {
+  try {
+    const res = await request(`/admission-tests/${testId}/merit-list`);
+    return res && res.merit_list ? res.merit_list : (Array.isArray(res) ? res : []);
+  } catch (error) {
+    if (!shouldUseLocalAdmissionsFallback(error)) throw error;
+    const regs = readLocal('rbmi_local_test_regs', []);
+    return regs
+      .filter(r => r.test_id === testId && r.marks_obtained !== undefined)
+      .sort((a, b) => b.marks_obtained - a.marks_obtained);
+  }
+}
+
+// ---- SCHOLARSHIPS ----
+export async function fetchScholarships() {
+  try {
+    const res = await request('/scholarships');
+    return res && res.data ? res.data : (Array.isArray(res) ? res : []);
+  } catch (error) {
+    if (!shouldUseLocalAdmissionsFallback(error)) throw error;
+    return readLocal('rbmi_local_scholarships', [
+      { id: 'sch-1', name: 'RBMI Merit Scholarship', type: 'Merit-Based', amount: '25% Tuition Fee Waiver', eligibility: '>= 85% in Class 12 / Grad', deadline: '2026-07-31', created_at: new Date().toISOString() },
+      { id: 'sch-2', name: 'Sports & Cultural Excellence', type: 'Special Category', amount: '15% Tuition Fee Waiver', eligibility: 'State/National level certificates', deadline: '2026-07-31', created_at: new Date().toISOString() }
+    ]);
+  }
+}
+
+export async function createScholarship(data) {
+  try {
+    return await request('/scholarships', { method: 'POST', body: JSON.stringify(data) });
+  } catch (error) {
+    if (!shouldUseLocalAdmissionsFallback(error)) throw error;
+    const scholarships = await fetchScholarships();
+    const newSch = { id: makeLocalId('sch'), ...data, created_at: new Date().toISOString() };
+    scholarships.push(newSch);
+    writeLocal('rbmi_local_scholarships', scholarships);
+    return newSch;
+  }
+}
+
+export async function applyForScholarship(data) {
+  try {
+    return await request('/scholarships/apply', { method: 'POST', body: JSON.stringify(data) });
+  } catch (error) {
+    if (!shouldUseLocalAdmissionsFallback(error)) throw error;
+    const apps = readLocal('rbmi_local_sch_apps', []);
+    const newApp = { id: makeLocalId('schapp'), ...data, status: 'Pending', applied_at: new Date().toISOString() };
+    apps.push(newApp);
+    writeLocal('rbmi_local_sch_apps', apps);
+    return newApp;
+  }
+}
+
+export async function reviewScholarshipApplication(data) {
+  try {
+    return await request('/scholarships/review', { method: 'POST', body: JSON.stringify(data) });
+  } catch (error) {
+    if (!shouldUseLocalAdmissionsFallback(error)) throw error;
+    const apps = readLocal('rbmi_local_sch_apps', []);
+    const idx = apps.findIndex(a => a.id === data.id || (a.scholarship_id === data.scholarship_id && a.student_email === data.student_email));
+    if (idx !== -1) {
+      apps[idx].status = data.status;
+      apps[idx].remarks = data.remarks;
+      writeLocal('rbmi_local_sch_apps', apps);
+      return apps[idx];
+    }
+    return null;
+  }
+}
+
+export async function fetchScholarshipApplications() {
+  try {
+    const res = await request('/scholarships/applications');
+    return res && res.data ? res.data : (Array.isArray(res) ? res : []);
+  } catch (error) {
+    if (!shouldUseLocalAdmissionsFallback(error)) throw error;
+    const user = getSessionUser();
+    let apps = readLocal('rbmi_local_sch_apps', [
+      { id: 'sch-app-1', scholarship_id: 'sch-1', scholarship_name: 'RBMI Merit Scholarship', student_name: 'Rahul Sharma', student_email: 'rahul@gmail.com', status: 'Pending', applied_at: new Date().toISOString() }
+    ]);
+    if (user?.role === 'student') {
+      apps = apps.filter(a => a.student_email === user.email);
+    }
+    return apps;
+  }
+}
+
+// ---- BATCHES ----
+export async function fetchBatches() {
+  try {
+    const res = await request('/batches');
+    return res && res.data ? res.data : (Array.isArray(res) ? res : []);
+  } catch (error) {
+    if (!shouldUseLocalAdmissionsFallback(error)) throw error;
+    return readLocal('rbmi_local_batches', [
+      { id: 'batch-1', name: 'MBA Section A', course: 'MBA', section: 'A', capacity: 60, academic_year: '2026-27', student_count: 5, created_at: new Date().toISOString() },
+      { id: 'batch-2', name: 'BCA Section B', course: 'BCA', section: 'B', capacity: 50, academic_year: '2026-27', student_count: 8, created_at: new Date().toISOString() }
+    ]);
+  }
+}
+
+export async function createBatch(data) {
+  try {
+    return await request('/batches', { method: 'POST', body: JSON.stringify(data) });
+  } catch (error) {
+    if (!shouldUseLocalAdmissionsFallback(error)) throw error;
+    const batches = await fetchBatches();
+    const newBatch = { id: makeLocalId('batch'), student_count: 0, ...data, created_at: new Date().toISOString() };
+    batches.push(newBatch);
+    writeLocal('rbmi_local_batches', batches);
+    return newBatch;
+  }
+}
+
+export async function updateBatch(id, data) {
+  try {
+    return await request(`/batches/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  } catch (error) {
+    if (!shouldUseLocalAdmissionsFallback(error)) throw error;
+    const batches = await fetchBatches();
+    const idx = batches.findIndex(b => b.id === id);
+    if (idx !== -1) {
+      batches[idx] = { ...batches[idx], ...data };
+      writeLocal('rbmi_local_batches', batches);
+      return batches[idx];
+    }
+    throw new Error('Batch not found');
+  }
+}
+
+export async function assignStudentToBatch(data) {
+  try {
+    return await request('/batches/assign', { method: 'POST', body: JSON.stringify(data) });
+  } catch (error) {
+    if (!shouldUseLocalAdmissionsFallback(error)) throw error;
+    const batchStudents = readLocal('rbmi_local_batch_students', []);
+    const newAssign = { id: makeLocalId('assign'), ...data, assigned_at: new Date().toISOString() };
+    batchStudents.push(newAssign);
+    writeLocal('rbmi_local_batch_students', batchStudents);
+
+    // Update student count in batch
+    const batches = await fetchBatches();
+    const idx = batches.findIndex(b => b.name === data.batch_name || b.id === data.batch_id);
+    if (idx !== -1) {
+      batches[idx].student_count = (batches[idx].student_count || 0) + 1;
+      writeLocal('rbmi_local_batches', batches);
+    }
+    return newAssign;
+  }
+}
+
+export async function fetchBatchStudents() {
+  try {
+    const res = await request('/batches/students');
+    return res && res.data ? res.data : (Array.isArray(res) ? res : []);
+  } catch (error) {
+    if (!shouldUseLocalAdmissionsFallback(error)) throw error;
+    return readLocal('rbmi_local_batch_students', [
+      { id: 'assign-1', student_id: 'std-1', student_name: 'Amit Kumar', roll_number: 'MBA-2026-001', batch_name: 'MBA Section A', course: 'MBA', assigned_at: new Date().toISOString() }
+    ]);
+  }
+}
+
+// ---- LEAD DISTRIBUTION ----
+export async function fetchLeadDistributionRules() {
+  try {
+    const res = await request('/lead-distribution');
+    return res && res.data ? res.data : (Array.isArray(res) ? res : []);
+  } catch (error) {
+    if (!shouldUseLocalAdmissionsFallback(error)) throw error;
+    return readLocal('rbmi_local_ld_rules', [
+      { id: 'rule-1', name: 'Round Robin General', criteria: 'counselor_rotation', active: true, conditions: { source: 'All' }, created_at: new Date().toISOString() },
+      { id: 'rule-2', name: 'Bareilly Regional Route', criteria: 'least_loaded', active: false, conditions: { city: 'Bareilly' }, created_at: new Date().toISOString() }
+    ]);
+  }
+}
+
+export async function createLeadDistributionRule(data) {
+  try {
+    return await request('/lead-distribution', { method: 'POST', body: JSON.stringify(data) });
+  } catch (error) {
+    if (!shouldUseLocalAdmissionsFallback(error)) throw error;
+    const rules = await fetchLeadDistributionRules();
+    const newRule = { id: makeLocalId('rule'), active: true, ...data, created_at: new Date().toISOString() };
+    rules.push(newRule);
+    writeLocal('rbmi_local_ld_rules', rules);
+    return newRule;
+  }
+}
+
+export async function updateLeadDistributionRule(id, data) {
+  try {
+    return await request(`/lead-distribution/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  } catch (error) {
+    if (!shouldUseLocalAdmissionsFallback(error)) throw error;
+    const rules = await fetchLeadDistributionRules();
+    const idx = rules.findIndex(r => r.id === id);
+    if (idx !== -1) {
+      rules[idx] = { ...rules[idx], ...data };
+      writeLocal('rbmi_local_ld_rules', rules);
+      return rules[idx];
+    }
+    throw new Error('Rule not found');
+  }
+}
+
+export async function deleteLeadDistributionRule(id) {
+  try {
+    return await request(`/lead-distribution/${id}`, { method: 'DELETE' });
+  } catch (error) {
+    if (!shouldUseLocalAdmissionsFallback(error)) throw error;
+    const rules = await fetchLeadDistributionRules();
+    const filtered = rules.filter(r => r.id !== id);
+    writeLocal('rbmi_local_ld_rules', filtered);
+    return { success: true };
+  }
+}
+
+export async function testLeadDistribution(data) {
+  try {
+    return await request('/lead-distribution/test', { method: 'POST', body: JSON.stringify(data) });
+  } catch (error) {
+    if (!shouldUseLocalAdmissionsFallback(error)) throw error;
+    return {
+      success: true,
+      assigned_counselor: 'Priya Sharma (Counselor MBA)',
+      rule_matched: data.rule_name || 'Round Robin General',
+      timestamp: new Date().toISOString()
+    };
+  }
+}
+
+// ---- NOTIFICATIONS ----
+export async function fetchNotificationsList() {
+  try {
+    const res = await request('/notifications');
+    return res && res.data ? res.data : (Array.isArray(res) ? res : []);
+  } catch (error) {
+    if (!shouldUseLocalAdmissionsFallback(error)) throw error;
+    return readLocal('rbmi_local_notifications_list', [
+      { id: 'notif-1', title: 'New Application Received', message: 'Rahul Sharma has applied for MBA Program.', read: false, type: 'system', priority: 'high', created_at: new Date().toISOString() },
+      { id: 'notif-2', title: 'Fee Payment Verified', message: 'Online transaction of INR 25,000 completed by Student.', read: true, type: 'payment', priority: 'medium', created_at: new Date(Date.now() - 3600000).toISOString() }
+    ]);
+  }
+}
+
+export async function getUnreadCount() {
+  try {
+    return await request('/notifications/unread-count');
+  } catch (error) {
+    if (!shouldUseLocalAdmissionsFallback(error)) throw error;
+    const list = await fetchNotificationsList();
+    return { count: list.filter(n => !n.read).length };
+  }
+}
+
+export async function createNotificationItem(data) {
+  try {
+    return await request('/notifications', { method: 'POST', body: JSON.stringify(data) });
+  } catch (error) {
+    if (!shouldUseLocalAdmissionsFallback(error)) throw error;
+    const list = await fetchNotificationsList();
+    const newItem = { id: makeLocalId('notif'), read: false, ...data, created_at: new Date().toISOString() };
+    list.unshift(newItem);
+    writeLocal('rbmi_local_notifications_list', list);
+    return newItem;
+  }
+}
+
+export async function broadcastNotification(data) {
+  try {
+    return await request('/notifications/broadcast', { method: 'POST', body: JSON.stringify(data) });
+  } catch (error) {
+    if (!shouldUseLocalAdmissionsFallback(error)) throw error;
+    const list = await fetchNotificationsList();
+    const newItem = { id: makeLocalId('notif'), read: false, title: data.title, message: data.message, type: 'broadcast', priority: data.priority || 'medium', created_at: new Date().toISOString() };
+    list.unshift(newItem);
+    writeLocal('rbmi_local_notifications_list', list);
+    return { success: true, broadcasted: newItem };
+  }
+}
+
+export async function markNotificationRead(id) {
+  try {
+    return await request(`/notifications/${id}/read`, { method: 'PUT' });
+  } catch (error) {
+    if (!shouldUseLocalAdmissionsFallback(error)) throw error;
+    const list = await fetchNotificationsList();
+    const idx = list.findIndex(n => n.id === id);
+    if (idx !== -1) {
+      list[idx].read = true;
+      writeLocal('rbmi_local_notifications_list', list);
+      return list[idx];
+    }
+    return null;
+  }
+}
+
+export async function markAllNotificationsRead() {
+  try {
+    return await request('/notifications/mark-all-read', { method: 'PUT' });
+  } catch (error) {
+    if (!shouldUseLocalAdmissionsFallback(error)) throw error;
+    const list = await fetchNotificationsList();
+    list.forEach(n => n.read = true);
+    writeLocal('rbmi_local_notifications_list', list);
+    return { success: true };
+  }
+}
+
+export async function deleteNotificationItem(id) {
+  try {
+    return await request(`/notifications/${id}`, { method: 'DELETE' });
+  } catch (error) {
+    if (!shouldUseLocalAdmissionsFallback(error)) throw error;
+    const list = await fetchNotificationsList();
+    const filtered = list.filter(n => n.id !== id);
+    writeLocal('rbmi_local_notifications_list', filtered);
+    return { success: true };
+  }
+}
+
+// ---- ADVANCED REPORTS ----
+export async function generateReport(data) {
+  try {
+    return await request('/reports/generate', { method: 'POST', body: JSON.stringify(data) });
+  } catch (error) {
+    if (!shouldUseLocalAdmissionsFallback(error)) throw error;
+    return {
+      success: true,
+      report_type: data.report_type,
+      generated_at: new Date().toISOString(),
+      data: [
+        { label: 'Source: Direct Website', count: 124, revenue: 1550000 },
+        { label: 'Source: Shiksha.com', count: 85, revenue: 950000 },
+        { label: 'Source: Facebook Ads', count: 96, revenue: 1100000 },
+        { label: 'Source: Google Ads', count: 142, revenue: 1850000 }
+      ]
+    };
+  }
+}
+
+export async function scheduleReport(data) {
+  try {
+    return await request('/reports/schedule', { method: 'POST', body: JSON.stringify(data) });
+  } catch (error) {
+    if (!shouldUseLocalAdmissionsFallback(error)) throw error;
+    const schedules = readLocal('rbmi_local_report_schedules', []);
+    const newSchedule = { id: makeLocalId('schrep'), ...data, created_at: new Date().toISOString() };
+    schedules.push(newSchedule);
+    writeLocal('rbmi_local_report_schedules', schedules);
+    return newSchedule;
+  }
+}
+
+// ---- UTM TRACKING ----
+export async function trackUTM(data) {
+  try {
+    return await request('/utm/track', { method: 'POST', body: JSON.stringify(data) });
+  } catch (error) {
+    if (!shouldUseLocalAdmissionsFallback(error)) throw error;
+    return { success: true, message: 'UTM parameters tracked locally' };
+  }
+}
+
+export async function fetchUTMAnalytics() {
+  try {
+    return await request('/utm/analytics');
+  } catch (error) {
+    if (!shouldUseLocalAdmissionsFallback(error)) throw error;
+    return [
+      { source: 'google', medium: 'cpc', campaign: 'admission_2026', visits: 1240, conversions: 142 },
+      { source: 'facebook', medium: 'social_ads', campaign: 'mba_drive', visits: 980, conversions: 96 },
+      { source: 'shiksha', medium: 'portal', campaign: 'premium_listing', visits: 450, conversions: 85 }
+    ];
+  }
+}
+
+export async function fetchUTMConversions() {
+  try {
+    return await request('/utm/conversions');
+  } catch (error) {
+    if (!shouldUseLocalAdmissionsFallback(error)) throw error;
+    return [
+      { student_name: 'Rohan Gupta', email: 'rohan.g@gmail.com', source: 'google', medium: 'cpc', campaign: 'admission_2026', date: new Date().toISOString() }
+    ];
+  }
+}
+
+// ---- MULTI-LANGUAGE ----
+export async function fetchLanguages() {
+  try {
+    return await request('/i18n/languages');
+  } catch (error) {
+    if (!shouldUseLocalAdmissionsFallback(error)) throw error;
+    return [
+      { code: 'en', name: 'English', nativeName: 'English' },
+      { code: 'hi', name: 'Hindi', nativeName: 'हिन्दी' },
+      { code: 'ur', name: 'Urdu', nativeName: 'اردو' },
+      { code: 'pa', name: 'Punjabi', nativeName: 'ਪੰਜਾਬी' },
+      { code: 'bn', name: 'Bengali', nativeName: 'বাংলা' }
+    ];
+  }
+}
+
+export async function fetchTranslations() {
+  try {
+    return await request('/i18n/translations');
+  } catch (error) {
+    if (!shouldUseLocalAdmissionsFallback(error)) throw error;
+    return {
+      en: { welcome: 'Welcome to RBMI Admission Hub', admission_portal: 'Admission Portal', login: 'Login' },
+      hi: { welcome: 'आरबीएमआई प्रवेश केंद्र में आपका स्वागत है', admission_portal: 'प्रवेश पोर्टल', login: 'लॉगिन' }
+    };
+  }
+}
+
+export async function updateTranslations(data) {
+  try {
+    return await request('/i18n/translations', { method: 'PUT', body: JSON.stringify(data) });
+  } catch (error) {
+    if (!shouldUseLocalAdmissionsFallback(error)) throw error;
+    return { success: true };
+  }
+}
+
+export async function getUserLanguage() {
+  try {
+    return await request('/i18n/user/language');
+  } catch (error) {
+    if (!shouldUseLocalAdmissionsFallback(error)) throw error;
+    return { language: readLocal('rbmi_user_lang', 'en') };
+  }
+}
+
+export async function setUserLanguage(data) {
+  try {
+    return await request('/i18n/user/language', { method: 'PUT', body: JSON.stringify(data) });
+  } catch (error) {
+    if (!shouldUseLocalAdmissionsFallback(error)) throw error;
+    writeLocal('rbmi_user_lang', data.language);
+    return { success: true, language: data.language };
+  }
+}
+
+export async function translateText(data) {
+  try {
+    return await request('/i18n/translate', { method: 'POST', body: JSON.stringify(data) });
+  } catch (error) {
+    if (!shouldUseLocalAdmissionsFallback(error)) throw error;
+    return { translatedText: data.text }; // Fallback returns original text
+  }
+}
+
+// ---- GENERIC API ACCESS ----
+export async function getAPI(path, method = 'GET', body = null) {
+  const options = { method };
+  if (body) {
+    options.body = JSON.stringify(body);
+  }
+  return request(path, options);
 }

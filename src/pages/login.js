@@ -105,20 +105,20 @@ function init3DEffects() {
     }
   }
 
-  // ── 3D card tilt ──
-  const wrap = document.querySelector('.lp-card-3d-wrap');
-  const card = document.querySelector('.lp-card-3d');
-  if (wrap && card) {
-    wrap.addEventListener('mousemove', (e) => {
-      const rect = wrap.getBoundingClientRect();
-      const x = (e.clientX - rect.left) / rect.width  - 0.5;
-      const y = (e.clientY - rect.top)  / rect.height - 0.5;
-      card.style.transform = `rotateX(${-y * 12}deg) rotateY(${x * 12}deg) translateZ(10px)`;
-    }, { passive: true });
-    wrap.addEventListener('mouseleave', () => {
-      card.style.transform = 'rotateX(0deg) rotateY(0deg) translateZ(0)';
-    });
-  }
+  // ── 3D card tilt (DISABLED BY REQUEST) ──
+  // const wrap = document.querySelector('.lp-card-3d-wrap');
+  // const card = document.querySelector('.lp-card-3d');
+  // if (wrap && card) {
+  //   wrap.addEventListener('mousemove', (e) => {
+  //     const rect = wrap.getBoundingClientRect();
+  //     const x = (e.clientX - rect.left) / rect.width  - 0.5;
+  //     const y = (e.clientY - rect.top)  / rect.height - 0.5;
+  //     card.style.transform = `rotateX(${-y * 12}deg) rotateY(${x * 12}deg) translateZ(10px)`;
+  //   }, { passive: true });
+  //   wrap.addEventListener('mouseleave', () => {
+  //     card.style.transform = 'rotateX(0deg) rotateY(0deg) translateZ(0)';
+  //   });
+  // }
 
   // ── Radial hover glow on demo buttons ──
   document.querySelectorAll('.lp-demo').forEach(btn => {
@@ -197,10 +197,24 @@ export function showLogin({ onSuccess, onSignupClick }) {
                   <input type="email" id="lemail" class="lp-input" placeholder="admin@rbmi.edu.in" required />
                 </div>
                 <div class="lp-group">
-                  <label>Password</label>
+                  <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <label>Password</label>
+                    <a href="#" id="lforgot" style="font-size:12px; color:#a5b4fc; text-decoration:none;">Forgot password?</a>
+                  </div>
                   <input type="password" id="lpass" class="lp-input" placeholder="Enter password" required />
                 </div>
                 <button type="submit" class="lp-btn" id="lbtn">Sign In</button>
+              </form>
+
+              <!-- Forgot Password Form (Hidden by default) -->
+              <form id="lforgot-form" class="lp-form" style="display: none;">
+                <p style="font-size:13px; color:#94a3b8; margin-bottom:15px; line-height:1.4;">Enter your email address and we'll send you a link to reset your password.</p>
+                <div class="lp-group">
+                  <label>Email</label>
+                  <input type="email" id="lf-email" class="lp-input" placeholder="admin@rbmi.edu.in" required />
+                </div>
+                <button type="submit" class="lp-btn" id="lf-btn">Send Reset Link</button>
+                <button type="button" class="lp-btn" id="lf-cancel" style="margin-top:10px; background:rgba(255,255,255,0.05); color:#cbd5e1;">Cancel</button>
               </form>
 
               ${showDemoLogin ? `
@@ -301,7 +315,126 @@ export function showLogin({ onSuccess, onSignupClick }) {
     e.preventDefault();
     onSignupClick();
   });
+
+  // Forgot Password Toggle
+  const loginForm = document.getElementById('lform');
+  const forgotForm = document.getElementById('lforgot-form');
+  const errDiv = document.getElementById('lerr');
+
+  document.getElementById('lforgot')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    errDiv.style.display = 'none';
+    loginForm.style.display = 'none';
+    forgotForm.style.display = 'flex';
+  });
+
+  document.getElementById('lf-cancel')?.addEventListener('click', () => {
+    errDiv.style.display = 'none';
+    forgotForm.style.display = 'none';
+    loginForm.style.display = 'flex';
+  });
+
+  // Forgot Password Submit
+  forgotForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('lf-email').value.trim();
+    const btn = document.getElementById('lf-btn');
+    errDiv.style.display = 'none';
+    btn.disabled = true;
+    btn.textContent = 'Sending...';
+
+    try {
+      const supabase = getSupabase();
+      if (!supabase) throw new Error('Supabase is not configured.');
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/#/reset-password`
+      });
+      if (error) throw error;
+      
+      errDiv.style.color = '#86efac'; // Green success message
+      errDiv.textContent = 'Reset link sent! Please check your email.';
+      errDiv.style.display = 'block';
+      setTimeout(() => {
+        errDiv.style.color = ''; // Reset color
+        errDiv.style.display = 'none';
+        forgotForm.style.display = 'none';
+        loginForm.style.display = 'flex';
+      }, 4000);
+    } catch (ex) {
+      errDiv.style.color = '#f87171'; // Red error
+      errDiv.textContent = '⚠ ' + ex.message;
+      errDiv.style.display = 'block';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Send Reset Link';
+    }
+  });
 }
+
+// ─── UPDATE PASSWORD ──────────────────────────────────────────────────────────
+export function showUpdatePassword({ onSuccess, onCancel }) {
+  const root = document.getElementById('login-root');
+  root.classList.add('show');
+
+  root.innerHTML = `
+    ${buildBackground()}
+    <div class="lp" style="justify-content: center;">
+      <div class="lp-right" style="width: 100%; max-width: 420px; display:flex; justify-content:center;">
+        <div class="lp-card">
+          <div class="lp-card-logo">
+            <div class="lp-card-logo-img"><img src="/logo.png" alt="RBMI Logo" /></div>
+            <div class="lp-card-logo-text"><strong>RBMI Admission Hub</strong><span>Password Reset</span></div>
+          </div>
+          <h2 class="lp-title" style="margin-bottom:10px;">Set New Password</h2>
+          <p style="font-size:13px; color:#94a3b8; margin-bottom:20px;">Please enter your new password below.</p>
+          <div id="lerr" class="lp-err"></div>
+
+          <form id="lupdate-form" class="lp-form">
+            <div class="lp-group">
+              <label>New Password</label>
+              <input type="password" id="lu-pass" class="lp-input" placeholder="Enter new password" required minlength="6" />
+            </div>
+            <button type="submit" class="lp-btn" id="lu-btn">Update Password</button>
+            <button type="button" class="lp-btn" id="lu-cancel" style="margin-top:10px; background:rgba(255,255,255,0.05); color:#cbd5e1;">Cancel</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('lu-cancel')?.addEventListener('click', onCancel);
+
+  document.getElementById('lupdate-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const pass = document.getElementById('lu-pass').value;
+    const btn = document.getElementById('lu-btn');
+    const errDiv = document.getElementById('lerr');
+    errDiv.style.display = 'none';
+    btn.disabled = true;
+    btn.textContent = 'Updating...';
+
+    try {
+      const supabase = getSupabase();
+      if (!supabase) throw new Error('Supabase not configured');
+      const { data, error } = await supabase.auth.updateUser({ password: pass });
+      if (error) throw error;
+      
+      errDiv.style.color = '#86efac';
+      errDiv.textContent = 'Password updated successfully!';
+      errDiv.style.display = 'block';
+      setTimeout(() => {
+        onSuccess(data.user);
+      }, 1500);
+    } catch (ex) {
+      errDiv.style.color = '#f87171';
+      errDiv.textContent = '⚠ ' + ex.message;
+      errDiv.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Update Password';
+    }
+  });
+}
+
 
 // ─── SIGNUP ───────────────────────────────────────────────────────────────────
 export function showSignup({ onSuccess, onLoginClick }) {

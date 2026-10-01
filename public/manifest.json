@@ -1,21 +1,43 @@
 {
   "name": "RBMI Admission Hub",
-  "short_name": "RBMI Hub",
-  "description": "Rakshpal Bahadur Management Institute Admission CRM",
-  "start_url": "/",
+  "short_name": "RBMI CRM",
+  "description": "Complete Admission Management CRM for Rakshpal Bahadur Management Institute — manage leads, counselors, applications, and payments.",
+  "start_url": "/#/dashboard",
   "display": "standalone",
-  "background_color": "#1e3a8a",
-  "theme_color": "#1e3a8a",
+  "orientation": "portrait",
+  "theme_color": "#6366f1",
+  "background_color": "#0f172a",
+  "categories": ["education", "business"],
   "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
     {
       "src": "/logo.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "/logo.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "url": "/#/dashboard",
+      "description": "View admission dashboard"
+    },
+    {
+      "name": "Add Lead",
+      "url": "/#/leads",
+      "description": "Manage student leads"
     }
   ]
 }

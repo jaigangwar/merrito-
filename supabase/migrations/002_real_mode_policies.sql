@@ -21,6 +21,21 @@ as $$
   select counselor_id from public.profiles where id::text = auth.uid()::text limit 1
 $$;
 
+-- Enable RLS for all core tables
+alter table public.profiles enable row level security;
+alter table public.leads enable row level security;
+alter table public.counselors enable row level security;
+alter table public.courses enable row level security;
+alter table public.activities enable row level security;
+alter table public.tasks enable row level security;
+alter table public.applications enable row level security;
+alter table public.queries enable row level security;
+alter table public.payments enable row level security;
+alter table public.portal_profiles enable row level security;
+alter table public.institute_settings enable row level security;
+alter table public.form_templates enable row level security;
+alter table public.campaigns enable row level security;
+
 drop policy if exists "Anyone can read profiles" on profiles;
 drop policy if exists "Service role can manage profiles" on profiles;
 drop policy if exists "Anyone can read leads" on leads;

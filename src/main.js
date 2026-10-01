@@ -13,7 +13,9 @@ import './styles/marketing.css';
 import './styles/login.css';
 import './styles/sqi.css';
 import './styles/userDashboard.css';
-
+import './styles/admissions.css';
+import './styles/callLogs.css';
+import './styles/studentInbox.css';
 import { registerRoute, initRouter } from './router.js';
 import { renderSidebar } from './components/sidebar.js';
 import { renderHeader } from './components/header.js';
@@ -33,9 +35,20 @@ import { renderAccessControl, renderAiAssistant, renderCalendar, renderCampaigns
 import { renderAuditLog } from './pages/auditLog.js';
 import { renderStudentQualityIndex } from './pages/studentQualityIndex.js';
 import { renderUserDashboard } from './pages/userDashboard.js';
+import { formBuilderPage } from './pages/formBuilder.js';
+import { publicFormPage } from './pages/publicForm.js';
+import { renderAdmissionTests } from './pages/admissionTests.js';
+import { renderScholarships } from './pages/scholarships.js';
+import { renderBatches } from './pages/batches.js';
+import { renderLeadDistribution } from './pages/leadDistribution.js';
+import { renderNotifications } from './pages/notifications.js';
+import { renderCallLogs } from './pages/callLogs.js';
+import { renderStudentInbox } from './pages/studentInbox.js';
+import { renderChatSessions } from './pages/chatSessions.js';
+import { renderDripCampaigns } from './pages/dripCampaigns.js';
 import { getCurrentUser } from './lib/auth.js';
 import { API_BASE } from './lib/api.js';
-import { showLogin, showSignup } from './pages/login.js';
+import { showLogin, showSignup, showUpdatePassword } from './pages/login.js';
 import { createIcons } from './lib/icons.js';
 import { getSupabase } from './lib/supabase.js';
 
@@ -76,7 +89,18 @@ const routes = [
   ['/integrations', renderIntegrations],
   ['/audit-log', renderAuditLog],
   ['/sqi', renderStudentQualityIndex],
-  ['/user-dashboard', renderUserDashboard]
+  ['/user-dashboard', renderUserDashboard],
+  ['/form-builder', formBuilderPage],
+  ['/form/:id', publicFormPage],
+  ['/admission-tests', renderAdmissionTests],
+  ['/scholarships', renderScholarships],
+  ['/batches', renderBatches],
+  ['/lead-distribution', renderLeadDistribution],
+  ['/notifications', renderNotifications],
+  ['/call-logs', renderCallLogs],
+  ['/student-inbox', renderStudentInbox],
+  ['/chat-sessions', renderChatSessions],
+  ['/drip-campaigns', renderDripCampaigns]
 ];
 routes.forEach(([path, fn]) => registerRoute(path, fn));
 
@@ -86,11 +110,13 @@ function hideBoot(cb) {
     cb();
     return;
   }
-  el.style.opacity = '0';
   setTimeout(() => {
-    el.remove();
-    cb();
-  }, 400);
+    el.style.opacity = '0';
+    setTimeout(() => {
+      el.remove();
+      cb();
+    }, 500);
+  }, 600);
 }
 
 function startApp(user) {
@@ -113,14 +139,13 @@ function saveSession(payload, branch) {
 async function handleAuthCallback() {
   const hashParams = new URLSearchParams(window.location.hash.slice(1));
   const searchParams = new URLSearchParams(window.location.search);
-  const isCallbackRoute = window.location.pathname.endsWith('/auth/callback');
-  const hasAuthResponse = isCallbackRoute || searchParams.has('code') || searchParams.has('error') || hashParams.has('access_token');
-  if (!hasAuthResponse) return false;
+  const hasToken = hashParams.has('access_token') || searchParams.has('code');
+  if (!hasToken) return false;
 
   try {
     const supabase = getSupabase();
     if (supabase) {
-      const { data, error } = await supabase.auth.getSessionFromUrl();
+      const { data, error } = await supabase.auth.getSession();
       if (error) throw error;
 
       if (data?.session?.access_token) {
@@ -136,9 +161,17 @@ async function handleAuthCallback() {
         if (!res.ok) throw new Error(payload.error || 'Authentication failed');
 
         saveSession(payload, branch);
-        window.location.hash = payload.user.role === 'student' ? '/portal' : '/dashboard';
-        window.history.replaceState({}, document.title, window.location.pathname);
-        startApp({ ...payload.user, branch: payload.user.branch || branch });
+        
+        // Check for password recovery
+        const initialHashParams = new URLSearchParams(window.location.hash.slice(1));
+        if (initialHashParams.get('type') === 'recovery' || window.location.hash.includes('reset-password')) {
+          window.location.href = `${window.location.origin}/#/reset-password`;
+          return true;
+        }
+
+        // Clean redirection to root with hash
+        const targetHash = payload.user.role === 'student' ? '#/portal' : '#/dashboard';
+        window.location.href = `${window.location.origin}/${targetHash}`;
         return true;
       }
     }
@@ -161,24 +194,55 @@ function showLoginPage() {
   showLogin({ onSuccess: handleLoginSuccess, onSignupClick: showSignupPage });
 }
 
+function showUpdatePasswordPage() {
+  showUpdatePassword({
+    onSuccess: () => {
+      window.location.href = window.location.origin;
+    },
+    onCancel: () => {
+      window.location.href = window.location.origin;
+    }
+  });
+}
+
 setTimeout(() => {
   hideBoot(async () => {
     const hash = window.location.hash.slice(1);
     const hashParams = new URLSearchParams(hash);
     const searchParams = new URLSearchParams(window.location.search);
+    const user = getCurrentUser();
 
-    if (window.location.pathname.endsWith('/auth/callback') || searchParams.has('code') || searchParams.has('error') || hashParams.get('access_token')) {
-      handleAuthCallback();
+    // Check if we are on the /auth/callback route without any tokens (e.g. reload or back button)
+    const hasAuthParams = searchParams.has('code') || searchParams.has('error') || hashParams.has('access_token');
+    if (window.location.pathname.endsWith('/auth/callback') && !hasAuthParams) {
+      console.log('Landing on callback without params, redirecting...');
+      const targetHash = user ? (user.role === 'student' ? '#/portal' : '#/dashboard') : '';
+      window.location.href = `${window.location.origin}/${targetHash}`;
       return;
     }
 
-    const user = getCurrentUser();
+    if (hasAuthParams) {
+      const success = await handleAuthCallback();
+      if (!success) {
+        console.warn('Auth callback failed. Redirecting to root...');
+        window.location.href = window.location.origin;
+      }
+      return;
+    }
+
     if (user) {
-      startApp(user);
+      if (window.location.hash === '#/reset-password') {
+        showUpdatePasswordPage();
+      } else {
+        startApp(user);
+      }
     } else if (window.location.hash === '#/signup') {
       showSignupPage();
+    } else if (window.location.hash === '#/reset-password') {
+      // If not logged in but trying to reset, they shouldn't be here, send to login
+      showLoginPage();
     } else {
       showLoginPage();
     }
   });
-}, 800);
+}, 1800);

@@ -35,7 +35,7 @@ export async function renderStudentInbox(container) {
   const isStudent = user?.role === 'student';
 
   container.innerHTML = `
-    <div>
+    <div class="inbox-shell">
       <div class="page-header">
         <div>
           <h1 class="page-title">${isStudent ? 'My Messages' : 'Student Inbox'}</h1>
@@ -47,11 +47,11 @@ export async function renderStudentInbox(container) {
       </div>
 
       <!-- Tabs -->
-      <div style="display:flex;gap:4px;margin-bottom:20px;background:#f8fafc;padding:4px;border-radius:10px;width:fit-content;">
-        <button class="inbox-tab active" data-tab="inbox" style="padding:8px 20px;border-radius:8px;font-size:13px;font-weight:600;border:none;cursor:pointer;background:#fff;color:#0f172a;box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+      <div class="inbox-tab-wrap">
+        <button class="inbox-tab active" data-tab="inbox">
           <i data-lucide="inbox" style="width:14px;height:14px;margin-right:6px;"></i>Inbox
         </button>
-        <button class="inbox-tab" data-tab="chat" style="padding:8px 20px;border-radius:8px;font-size:13px;font-weight:600;border:none;cursor:pointer;background:transparent;color:#64748b;">
+        <button class="inbox-tab" data-tab="chat">
           <i data-lucide="message-square" style="width:14px;height:14px;margin-right:6px;"></i>Live Chat
         </button>
       </div>
@@ -60,7 +60,7 @@ export async function renderStudentInbox(container) {
       <div id="pane-inbox">
         <!-- Filters (admin/counselor only) -->
         ${!isStudent ? `
-        <div class="chart-card" style="padding:14px 20px;margin-bottom:16px;display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
+        <div class="chart-card inbox-filters">
           <input type="text" id="inbox-search" class="form-input" placeholder="Search student or message..." style="max-width:240px;" />
           <select id="inbox-filter-status" class="form-input" style="max-width:140px;">
             <option value="">All statuses</option>
@@ -95,13 +95,9 @@ export async function renderStudentInbox(container) {
   container.querySelectorAll('.inbox-tab').forEach(btn => {
     btn.addEventListener('click', () => {
       container.querySelectorAll('.inbox-tab').forEach(b => {
-        b.style.background = 'transparent';
-        b.style.color = '#64748b';
-        b.style.boxShadow = 'none';
+        b.classList.remove('active');
       });
-      btn.style.background = '#fff';
-      btn.style.color = '#0f172a';
-      btn.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+      btn.classList.add('active');
 
       const tab = btn.dataset.tab;
       container.querySelector('#pane-inbox').style.display = tab === 'inbox' ? 'block' : 'none';
@@ -158,8 +154,8 @@ export async function renderStudentInbox(container) {
         ${filtered.map(msg => {
           const initials = (msg.student_name || 'S').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
           return `
-          <div class="inbox-item" data-id="${msg.id}" style="display:flex;align-items:flex-start;gap:14px;padding:16px 20px;border-bottom:1px solid #f1f5f9;cursor:pointer;transition:background 0.15s;">
-            <div style="width:40px;height:40px;border-radius:50%;background:${getAvatarColor(msg.student_name || '')};display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:700;flex-shrink:0;">${initials}</div>
+          <div class="inbox-item-row" data-id="${msg.id}">
+            <div class="inbox-avatar-text" style="background:${getAvatarColor(msg.student_name || '')};">${initials}</div>
             <div style="flex:1;min-width:0;">
               <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px;">
                 <div style="display:flex;align-items:center;gap:8px;">
@@ -174,7 +170,7 @@ export async function renderStudentInbox(container) {
               <div style="font-size:13px;color:#64748b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(msg.message)}</div>
             </div>
             ${!isStudent && msg.status === 'open' ? `
-            <button class="btn-resolve" data-id="${msg.id}" style="flex-shrink:0;padding:5px 12px;font-size:12px;font-weight:600;background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0;border-radius:6px;cursor:pointer;white-space:nowrap;">
+            <button class="btn-resolve btn-resolve-inline" data-id="${msg.id}">
               Resolve
             </button>` : ''}
           </div>`;
@@ -184,9 +180,7 @@ export async function renderStudentInbox(container) {
     window.renderIcons?.();
 
     // Click to expand
-    list.querySelectorAll('.inbox-item').forEach(item => {
-      item.addEventListener('mouseenter', () => item.style.background = '#f8fafc');
-      item.addEventListener('mouseleave', () => item.style.background = '');
+    list.querySelectorAll('.inbox-item-row').forEach(item => {
       item.addEventListener('click', (e) => {
         if (e.target.closest('.btn-resolve')) return;
         const msg = allMessages.find(m => m.id === item.dataset.id);
@@ -219,11 +213,11 @@ export async function renderStudentInbox(container) {
           ${priorityBadge(msg.priority)} ${statusBadge(msg.status)}
           <span style="font-size:12px;color:#94a3b8;">${formatDate(msg.created_at)}</span>
         </div>
-        <div style="background:#f8fafc;border-radius:8px;padding:16px;">
+        <div class="inbox-msg-block">
           <div style="font-size:12px;font-weight:700;color:#94a3b8;text-transform:uppercase;margin-bottom:6px;">Subject</div>
           <div style="font-size:14px;font-weight:600;">${escapeHtml(msg.subject)}</div>
         </div>
-        <div style="background:#f8fafc;border-radius:8px;padding:16px;">
+        <div class="inbox-msg-block">
           <div style="font-size:12px;font-weight:700;color:#94a3b8;text-transform:uppercase;margin-bottom:6px;">Message</div>
           <div style="font-size:14px;line-height:1.7;">${escapeHtml(msg.message)}</div>
         </div>
@@ -349,16 +343,16 @@ export async function renderStudentInbox(container) {
     }
 
     area.innerHTML = `
-      <div style="display:grid;grid-template-columns:260px 1fr;gap:16px;height:560px;">
+      <div class="chat-layout">
         <!-- Thread list -->
-        <div class="chart-card" style="overflow-y:auto;">
-          <div style="padding:14px 16px;border-bottom:1px solid #f1f5f9;font-size:12px;font-weight:700;color:#94a3b8;text-transform:uppercase;">Conversations</div>
+        <div class="chart-card chat-thread-list">
+          <div style="padding:14px 16px;border-bottom:1px solid var(--color-border-light);font-size:12px;font-weight:700;color:var(--color-text-muted);text-transform:uppercase;">Conversations</div>
           ${chatThreads.map(t => {
             const lastMsg = t.messages?.[t.messages.length - 1];
             const initials = (t.student_name || 'S').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
             return `
-            <div class="chat-thread-item" data-id="${t.id}" style="display:flex;align-items:center;gap:10px;padding:12px 16px;cursor:pointer;border-bottom:1px solid #f8fafc;background:${t.id === activeChatId ? '#f0f9ff' : 'transparent'};transition:background 0.15s;">
-              <div style="width:36px;height:36px;border-radius:50%;background:${getAvatarColor(t.student_name || '')};display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700;flex-shrink:0;">${initials}</div>
+            <div class="chat-thread-item ${t.id === activeChatId ? 'active' : ''}" data-id="${t.id}">
+              <div class="chat-thread-avatar" style="background:${getAvatarColor(t.student_name || '')};">${initials}</div>
               <div style="min-width:0;">
                 <div style="font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(t.student_name)}</div>
                 <div style="font-size:11px;color:#94a3b8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(lastMsg?.text || 'No messages')}</div>
@@ -368,29 +362,29 @@ export async function renderStudentInbox(container) {
         </div>
 
         <!-- Chat window -->
-        <div class="chart-card" style="display:flex;flex-direction:column;overflow:hidden;">
+        <div class="chart-card chat-window">
           ${activeThread ? `
-          <div style="padding:14px 20px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:12px;">
-            <div style="width:36px;height:36px;border-radius:50%;background:${getAvatarColor(activeThread.student_name || '')};display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700;">${(activeThread.student_name || 'S').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}</div>
+          <div class="chat-header">
+            <div class="chat-thread-avatar" style="background:${getAvatarColor(activeThread.student_name || '')};">${(activeThread.student_name || 'S').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}</div>
             <div>
               <div style="font-weight:700;font-size:14px;">${escapeHtml(activeThread.student_name)}</div>
               <div style="font-size:12px;color:#64748b;">${escapeHtml(activeThread.counselor_name)} · ${activeThread.status}</div>
             </div>
           </div>
-          <div id="chat-messages" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;">
+          <div id="chat-messages" class="chat-messages">
             ${(activeThread.messages || []).map(msg => {
               const isMe = (isStudent && msg.sender === 'student') || (!isStudent && msg.sender === 'counselor');
               return `
               <div style="display:flex;justify-content:${isMe ? 'flex-end' : 'flex-start'};">
-                <div style="max-width:70%;padding:10px 14px;border-radius:${isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px'};background:${isMe ? '#6366f1' : '#f1f5f9'};color:${isMe ? '#fff' : '#0f172a'};">
+                <div class="${isMe ? 'chat-bubble-me' : 'chat-bubble-them'}">
                   <div style="font-size:13px;line-height:1.5;">${escapeHtml(msg.text)}</div>
-                  <div style="font-size:10px;margin-top:4px;opacity:0.7;">${new Date(msg.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</div>
+                  <div class="chat-time">${new Date(msg.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</div>
                 </div>
               </div>`;
             }).join('')}
-            ${!activeThread.messages?.length ? `<div style="text-align:center;color:#94a3b8;font-size:13px;margin-top:40px;">No messages yet. Start the conversation!</div>` : ''}
+            ${!activeThread.messages?.length ? `<div style="text-align:center;color:var(--color-text-muted);font-size:13px;margin-top:40px;">No messages yet. Start the conversation!</div>` : ''}
           </div>
-          <div style="padding:12px 16px;border-top:1px solid #f1f5f9;display:flex;gap:10px;align-items:flex-end;">
+          <div class="chat-input-area">
             <textarea id="chat-input" class="form-input" rows="2" placeholder="Type a message... (Enter to send)" style="flex:1;resize:none;"></textarea>
             <button id="btn-send-chat" class="btn btn-primary" style="flex-shrink:0;">
               <i data-lucide="send" style="width:16px;height:16px;"></i>

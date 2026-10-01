@@ -2,7 +2,9 @@ import express from 'express';
 import {
   getApplications, exportApplicationsCSV, createApplication, updateApplication,
   getQueries, createQuery, updateQuery,
-  getPayments, exportPaymentsCSV, createPayment, updatePayment
+  getPayments, exportPaymentsCSV, createPayment, updatePayment,
+  getLetterTemplates, createLetterTemplate, updateLetterTemplate,
+  getOfferLetters, generateOfferLetter
 } from '../controllers/applicationController.js';
 import { requireAuth } from '../auth.js';
 
@@ -22,4 +24,12 @@ router.get('/payments/export/csv', requireAuth, exportPaymentsCSV);
 router.post('/payments', requireAuth, createPayment);
 router.put('/payments/:id', requireAuth, updatePayment);
 
+router.get('/letter-templates', requireAuth, getLetterTemplates);
+router.post('/letter-templates', requireAuth, createLetterTemplate);
+router.put('/letter-templates/:id', requireAuth, updateLetterTemplate);
+
+router.get('/offer-letters', requireAuth, getOfferLetters);
+router.post('/offer-letters/generate', requireAuth, generateOfferLetter);
+
 export default router;
+

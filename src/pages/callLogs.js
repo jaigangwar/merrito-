@@ -15,25 +15,20 @@ function fmtDuration(secs = 0) {
 
 function directionBadge(dir) {
   const isIn = dir === 'inbound';
-  return `<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;background:${isIn ? 'rgba(59,130,246,0.12)' : 'rgba(16,185,129,0.12)'};color:${isIn ? '#60a5fa' : '#34d399'};">
+  const cls = isIn ? 'badge-inbound' : 'badge-outbound';
+  return `<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;" class="${cls}">
     <i data-lucide="${isIn ? 'phone-incoming' : 'phone-outgoing'}" style="width:11px;height:11px;"></i> ${isIn ? 'Inbound' : 'Outbound'}
   </span>`;
 }
 
 function statusBadge(status) {
-  const map = {
-    completed: { bg: 'rgba(16,185,129,0.12)', color: '#34d399' },
-    missed: { bg: 'rgba(239,68,68,0.12)', color: '#f87171' },
-    busy: { bg: 'rgba(245,158,11,0.12)', color: '#fbbf24' },
-    failed: { bg: 'rgba(239,68,68,0.12)', color: '#f87171' }
-  };
-  const s = map[status] || { bg: 'var(--color-bg)', color: 'var(--color-text-muted)' };
-  return `<span style="padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;background:${s.bg};color:${s.color};">${escapeHtml(status || 'completed')}</span>`;
+  const cls = `badge-${status || 'completed'}`;
+  return `<span style="padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;" class="${cls}">${escapeHtml(status || 'completed')}</span>`;
 }
 
 export async function renderCallLogs(container) {
   container.innerHTML = `
-    <div style="padding:0;">
+    <div class="cl-shell">
       <div class="page-header">
         <div>
           <h1 class="page-title">Call Logs</h1>
@@ -47,12 +42,12 @@ export async function renderCallLogs(container) {
       </div>
 
       <!-- KPI row -->
-      <div id="call-kpis" style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;">
+      <div id="call-kpis" class="cl-kpis">
         ${[1,2,3,4].map(() => `<div class="chart-card" style="padding:20px;"><div class="skeleton-block" style="height:48px;border-radius:8px;background:var(--color-bg);"></div></div>`).join('')}
       </div>
 
       <!-- Filters -->
-      <div class="chart-card" style="padding:16px 20px;margin-bottom:20px;display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
+      <div class="chart-card cl-filters">
         <input type="text" id="call-search" class="form-input" placeholder="Search student or phone..." style="max-width:240px;" />
         <select id="call-filter-dir" class="form-input" style="max-width:160px;">
           <option value="">All directions</option>
@@ -106,13 +101,13 @@ export async function renderCallLogs(container) {
     ];
 
     container.querySelector('#call-kpis').innerHTML = kpis.map(k => `
-      <div class="chart-card" style="padding:20px;display:flex;align-items:center;gap:16px;">
-        <div style="width:44px;height:44px;border-radius:12px;background:${k.color}20;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+      <div class="cl-kpi-card">
+        <div class="cl-kpi-icon-wrap" style="background:${k.color}20;">
           <i data-lucide="${k.icon}" style="width:22px;height:22px;color:${k.color};"></i>
         </div>
         <div>
-          <div style="font-size:22px;font-weight:800;color:var(--color-text);">${k.value}</div>
-          <div style="font-size:12px;color:var(--color-text-muted);font-weight:600;">${k.label}</div>
+          <div class="cl-kpi-val">${k.value}</div>
+          <div class="cl-kpi-label">${k.label}</div>
         </div>
       </div>
     `).join('');
@@ -167,7 +162,7 @@ export async function renderCallLogs(container) {
               <tr>
                 <td>
                   <div style="display:flex;align-items:center;gap:10px;">
-                    <div style="width:32px;height:32px;border-radius:50%;background:${getAvatarColor(log.student_name || '')};display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700;flex-shrink:0;">${initials}</div>
+                    <div class="cl-avatar-text" style="background:${getAvatarColor(log.student_name || '')};">${initials}</div>
                     <span style="font-weight:600;font-size:13px;">${escapeHtml(log.student_name)}</span>
                   </div>
                 </td>
@@ -180,7 +175,7 @@ export async function renderCallLogs(container) {
                 <td style="font-size:12px;color:var(--color-text-muted);white-space:nowrap;">${formatDate(log.created_at)}</td>
                 <td>
                   ${log.recording_url
-                    ? `<a href="${escapeHtml(log.recording_url)}" target="_blank" rel="noreferrer" style="display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--color-primary);font-weight:600;"><i data-lucide="play-circle" style="width:14px;height:14px;"></i> Play</a>`
+                    ? `<a href="${escapeHtml(log.recording_url)}" target="_blank" rel="noreferrer" class="cl-play-btn"><i data-lucide="play-circle" style="width:14px;height:14px;"></i> Play</a>`
                     : `<span style="font-size:12px;color:var(--color-border);">—</span>`
                   }
                 </td>
