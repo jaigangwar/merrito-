@@ -10,6 +10,18 @@ function normalizeEmail(value = '') {
   return String(value).trim().toLowerCase();
 }
 
+function resolveIdempotencyKey(req, payload, publisher) {
+  const headerKey = req.headers['x-idempotency-key'];
+  const candidate = headerKey || payload.event_id || payload.lead_id || payload.id || payload.request_id || payload.CallSid || '';
+  if (candidate) return String(candidate).trim();
+  const fingerprint = [
+    String(publisher || payload.source || 'website').toLowerCase(),
+    normalizePhone(payload.phone || payload.MobileNo || payload.student_mobile || payload.From || ''),
+    normalizeEmail(payload.email || payload.EmailId || payload.student_email || '')
+  ].join('|');
+  return fingerprint;
+}
+
 async function findDuplicateLead({ phone, email }) {
   const phoneKey = normalizePhone(phone);
   const emailKey = normalizeEmail(email);
@@ -39,6 +51,17 @@ export const captureLead = async (req, res) => {
       status: 'success',
       received_at: new Date().toISOString()
     };
+    if (!dbData.webhookDeliveries || typeof dbData.webhookDeliveries !== 'object') dbData.webhookDeliveries = {};
+    const deliveryKey = resolveIdempotencyKey(req, payload, publisher);
+    const existingDelivery = dbData.webhookDeliveries[deliveryKey];
+    if (existingDelivery) {
+      return res.status(200).json({
+        success: true,
+        duplicate_delivery: true,
+        lead_id: existingDelivery.lead_id || null,
+        message: 'Duplicate webhook delivery ignored'
+      });
+    }
 
     // --- PUBLISHER ADAPTERS ---
     let data = { ...payload };
@@ -100,12 +123,20 @@ export const captureLead = async (req, res) => {
       lname = parts.slice(1).join(' ');
     }
 
-    if (!String(fname || '').trim() || !String(phone || '').trim()) {
+    const normalizedPhone = normalizePhone(phone || '');
+    if (!String(fname || '').trim() || !normalizedPhone) {
       logEntry.status = 'failed';
       logEntry.error = 'Missing name or phone';
       dbData.inboundLogs.unshift(logEntry);
       saveDB(dbData);
       return res.status(400).json({ error: 'name and phone are required' });
+    }
+    if (normalizedPhone.length !== 10) {
+      logEntry.status = 'failed';
+      logEntry.error = 'Invalid phone number format';
+      dbData.inboundLogs.unshift(logEntry);
+      saveDB(dbData);
+      return res.status(400).json({ error: 'phone must contain a valid 10-digit mobile number' });
     }
 
     const duplicate = await findDuplicateLead({ phone, email });
@@ -113,6 +144,7 @@ export const captureLead = async (req, res) => {
       logEntry.status = 'duplicate';
       logEntry.lead_id = duplicate.id;
       dbData.inboundLogs.unshift(logEntry);
+      dbData.webhookDeliveries[deliveryKey] = { lead_id: duplicate.id, received_at: new Date().toISOString() };
       saveDB(dbData);
       await db.createActivity({
         lead_id: duplicate.id,
@@ -138,9 +170,8 @@ export const captureLead = async (req, res) => {
     // --- LEAD ALLOCATION RULES (Round Robin) ---
     const counselors = await db.getCounselors();
     if (counselors.length > 0) {
-      // Find the counselor with the fewest leads or use Round Robin
-      // For this demo, we'll pick the one with the fewest active leads
-      const leads = (getDB()).leads || [];
+      // Find the counselor with the fewest active leads.
+      const leads = await db.getLeads({});
       const counts = counselors.map(c => ({
         id: c.id,
         count: leads.filter(l => l.counselor_id === c.id).length
@@ -171,7 +202,14 @@ export const captureLead = async (req, res) => {
 
     logEntry.lead_id = lead.id;
     dbData.inboundLogs.unshift(logEntry);
+    dbData.webhookDeliveries[deliveryKey] = { lead_id: lead.id, received_at: new Date().toISOString() };
     if (dbData.inboundLogs.length > 100) dbData.inboundLogs.pop(); // Keep last 100
+    const retentionMs = 24 * 60 * 60 * 1000;
+    const cutoff = Date.now() - retentionMs;
+    for (const [key, value] of Object.entries(dbData.webhookDeliveries)) {
+      const t = new Date(value?.received_at || 0).getTime();
+      if (!t || t < cutoff) delete dbData.webhookDeliveries[key];
+    }
     saveDB(dbData);
 
     res.status(201).json({ success: true, lead_id: lead.id, message: 'Lead captured successfully' });

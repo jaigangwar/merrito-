@@ -3,48 +3,7 @@
   "counselors": [],
   "courses": [],
   "activities": [],
-  "users": [
-    {
-      "id": "u001-admin",
-      "name": "Admin RBMI",
-      "email": "admin@rbmi.edu.in",
-      "password": "admin123",
-      "role": "admin",
-      "counselor_id": null,
-      "branch": "bareilly",
-      "created_at": "2026-01-01T00:00:00.000Z"
-    },
-    {
-      "id": "u002-priya",
-      "name": "Priya Sharma",
-      "email": "priya@rbmi.edu.in",
-      "password": "counselor123",
-      "role": "counselor",
-      "counselor_id": "c001-rbmi-priya",
-      "branch": "bareilly",
-      "created_at": "2026-01-01T00:00:00.000Z"
-    },
-    {
-      "id": "u003-rajesh",
-      "name": "Rajesh Kumar",
-      "email": "rajesh@rbmi.edu.in",
-      "password": "counselor123",
-      "role": "counselor",
-      "counselor_id": "c002-rbmi-rajesh",
-      "branch": "bareilly",
-      "created_at": "2026-01-01T00:00:00.000Z"
-    },
-    {
-      "id": "u004-student-demo",
-      "name": "Aarav Mehta",
-      "email": "student@demo.in",
-      "password": "student123",
-      "role": "student",
-      "counselor_id": null,
-      "branch": "bareilly",
-      "created_at": "2026-05-02T10:24:13.829Z"
-    }
-  ],
+  "users": [],
   "settings": {
     "institute_name": "Rakshpal Bahadur Management Institute (RBMI)",
     "short_name": "RBMI",
@@ -70,24 +29,7 @@
       }
     ]
   },
-  "portalProfiles": {
-    "u004-student-demo": {
-      "user_id": "u004-student-demo",
-      "name": "Aarav Mehta",
-      "email": "student@demo.in",
-      "phone": "",
-      "city": "",
-      "course_id": null,
-      "stage": "enquiry",
-      "counselor_name": "Admissions team",
-      "readiness": 35,
-      "next_step": "Complete your profile",
-      "fee_due": "0",
-      "scholarship": "Not reviewed yet",
-      "branch": "bareilly",
-      "updated_at": "2026-10-01T07:13:37.255Z"
-    }
-  },
+  "portalProfiles": {},
   "applications": [],
   "queries": [],
   "payments": [],

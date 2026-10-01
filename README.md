@@ -24,13 +24,15 @@ npm run dev        # Frontend only — http://localhost:3000
 
 For real Supabase database/auth setup, see [SUPABASE_SETUP.md](./SUPABASE_SETUP.md).
 
-## Login Credentials
+## Demo Login Credentials (Optional)
 
 | Role | Email | Password | Campus |
 |------|-------|----------|--------|
 | Admin | admin@rbmi.edu.in | admin123 | Bareilly |
 | Counselor | priya@rbmi.edu.in | counselor123 | Bareilly |
 | Counselor | rajesh@rbmi.edu.in | counselor123 | Bareilly |
+
+> Demo login UI remains available. Startup user seeding now runs only when `SEED_DEMO_USERS=true` and `SEED_USERS_JSON` is provided.
 
 ---
 
@@ -103,10 +105,10 @@ Set `WEBHOOK_SECRET` in `.env` to require the `X-Webhook-Secret` header on publi
 ✅ Stage change tracking  
 
 ### Payment Integration
-✅ **Payment Gateway** — Mock Razorpay integration for online payments  
+✅ **Payment Gateway** — Razorpay-configured integration for online payments  
 ✅ Payment order creation and verification  
 ✅ Payment status tracking  
-✅ Webhook support for payment events
+✅ Webhook signature verification support for payment events
 
 ### New Enterprise Features ⭐
 ✅ **Admission Test Management** — Complete test lifecycle from creation to merit list  

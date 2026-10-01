@@ -257,8 +257,8 @@ async function createAutomatedTaskForLead(lead, stage = lead.stage) {
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 app.post('/api/health', (req, res) => res.json({ ok: true, body: req.body }));
 
-// Seed demo users only for local/demo mode. Real Supabase deployments should create users in Supabase Auth.
-const shouldSeedDemoUsers = process.env.SEED_DEMO_USERS === 'true' || (!db.USE_SUPABASE && process.env.USE_DEMO_DATA !== 'false' && process.env.REAL_DATA_MODE !== 'true');
+// Seed users only when explicitly enabled via environment variables.
+const shouldSeedDemoUsers = process.env.SEED_DEMO_USERS === 'true';
 if (shouldSeedDemoUsers) await seedDemoUsers();
 
 // ============================================================
@@ -2447,4 +2447,3 @@ if (!process.env.VERCEL) {
     console.log('');
   });
 }
-
