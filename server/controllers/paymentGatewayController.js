@@ -1,10 +1,13 @@
-// ===== PAYMENT GATEWAY CONTROLLER - Razorpay Integration (Mock) =====
+// ===== PAYMENT GATEWAY CONTROLLER - Razorpay Integration =====
 import { generateId, getDB, saveDB } from '../db.js';
 import * as db from '../supabase.js';
 
-// Mock Razorpay order creation
 export async function createOrder(req, res) {
   try {
+    if (!process.env.RAZORPAY_KEY_ID) {
+      return res.status(503).json({ error: 'Payment gateway is not configured' });
+    }
+
     const { amount, currency = 'INR', receipt, notes, lead_id } = req.body;
 
     if (!amount || !lead_id) {
@@ -17,7 +20,7 @@ export async function createOrder(req, res) {
       return res.status(404).json({ error: 'Lead not found' });
     }
 
-    // Create mock Razorpay order
+    // Create internal payment order record.
     const order = {
       id: `order_${generateId().replace(/-/g, '').substring(0, 14)}`,
       entity: 'order',
@@ -56,7 +59,6 @@ export async function createOrder(req, res) {
   }
 }
 
-// Mock Razorpay payment verification
 export async function verifyPayment(req, res) {
   try {
     const {
@@ -70,18 +72,16 @@ export async function verifyPayment(req, res) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    // Verify Razorpay signature when secret is configured, otherwise mock
     const razorpaySecret = process.env.RAZORPAY_KEY_SECRET;
-    if (razorpaySecret) {
-      const { createHmac } = await import('crypto');
-      const expectedSignature = createHmac('sha256', razorpaySecret)
-        .update(razorpay_order_id + '|' + razorpay_payment_id)
-        .digest('hex');
-      if (expectedSignature !== razorpay_signature) {
-        return res.status(400).json({ error: 'Invalid payment signature' });
-      }
-    } else {
-      console.warn('[Payment] RAZORPAY_KEY_SECRET not set — skipping signature verification (mock mode)');
+    if (!razorpaySecret) {
+      return res.status(503).json({ error: 'Payment verification is not configured' });
+    }
+    const { createHmac } = await import('crypto');
+    const expectedSignature = createHmac('sha256', razorpaySecret)
+      .update(razorpay_order_id + '|' + razorpay_payment_id)
+      .digest('hex');
+    if (expectedSignature !== razorpay_signature) {
+      return res.status(400).json({ error: 'Invalid payment signature' });
     }
 
     // Proceed with payment verification
@@ -163,21 +163,22 @@ export async function getPaymentStatus(req, res) {
   }
 }
 
-// Webhook handler for Razorpay events (mock)
 export async function handleWebhook(req, res) {
   try {
     const event = req.body;
 
-    // In real implementation, verify webhook signature
-    // const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
-    // const signature = req.headers['x-razorpay-signature'];
-    // const expectedSignature = crypto
-    //   .createHmac('sha256', webhookSecret)
-    //   .update(JSON.stringify(req.body))
-    //   .digest('hex');
-    // if (signature !== expectedSignature) {
-    //   return res.status(400).json({ error: 'Invalid signature' });
-    // }
+    const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
+    const signature = req.headers['x-razorpay-signature'];
+    if (!webhookSecret || !signature) {
+      return res.status(503).json({ error: 'Payment webhook is not configured' });
+    }
+    const { createHmac } = await import('crypto');
+    const expectedSignature = createHmac('sha256', webhookSecret)
+      .update(JSON.stringify(req.body))
+      .digest('hex');
+    if (signature !== expectedSignature) {
+      return res.status(400).json({ error: 'Invalid signature' });
+    }
 
     console.log('Razorpay webhook received:', event.event);
 
@@ -214,8 +215,11 @@ export async function handleWebhook(req, res) {
 // Get Razorpay configuration (for frontend)
 export async function getConfig(req, res) {
   try {
+    if (!process.env.RAZORPAY_KEY_ID) {
+      return res.status(503).json({ error: 'Payment gateway is not configured' });
+    }
     res.json({
-      key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_mock_key_id',
+      key_id: process.env.RAZORPAY_KEY_ID,
       currency: 'INR',
       name: process.env.INSTITUTE_NAME || 'RBMI Admissions',
       description: 'Admission Fee Payment',

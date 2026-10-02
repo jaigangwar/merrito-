@@ -71,19 +71,40 @@ function buildTokenResult(user, branch) {
   return { user: payload, token };
 }
 
-// ===== DEMO USERS (seeded into Supabase Auth on startup) =====
-const DEMO_USERS = [
-  { email: 'admin@rbmi.edu.in', password: 'admin123', name: 'Admin RBMI', role: 'admin', counselor_id: null, branch: 'bareilly' },
-  { email: 'priya@rbmi.edu.in', password: 'counselor123', name: 'Neha Khan', role: 'counselor', counselor_id: null, branch: 'bareilly' },
-  { email: 'rajesh@rbmi.edu.in', password: 'counselor123', name: 'Rajesh Kumar', role: 'counselor', counselor_id: null, branch: 'bareilly' },
-  { email: 'student@demo.in', password: 'student123', name: 'krishna jaiswal', role: 'student', counselor_id: null, branch: 'bareilly' }
-];
+function loadSeedUsersFromEnv() {
+  const raw = process.env.SEED_USERS_JSON;
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .filter(u => u && u.email && u.password)
+      .map(u => ({
+        email: String(u.email).trim().toLowerCase(),
+        password: String(u.password),
+        name: String(u.name || u.email.split('@')[0] || 'User'),
+        role: ['admin', 'counselor', 'student'].includes(String(u.role || '').toLowerCase()) ? String(u.role).toLowerCase() : 'student',
+        counselor_id: u.counselor_id ?? null,
+        branch: String(u.branch || 'bareilly')
+      }));
+  } catch (error) {
+    console.warn('Invalid SEED_USERS_JSON. Skipping seed users:', error.message);
+    return [];
+  }
+}
 
 export async function seedDemoUsers() {
+  if (process.env.SEED_DEMO_USERS !== 'true') return;
+  const seedUsers = loadSeedUsersFromEnv();
+  if (seedUsers.length === 0) {
+    console.warn('SEED_DEMO_USERS=true but SEED_USERS_JSON is missing/empty. Skipping startup user seeding.');
+    return;
+  }
+
   // Keep the local login accounts available for development, but never push
   // fictional users into a real Supabase project unless explicitly enabled.
   if (!USE_SUPABASE || !getServerSupabase() || process.env.SEED_SUPABASE_USERS !== 'true') {
-    seedLegacyUsers();
+    seedLegacyUsers(seedUsers);
     return;
   }
 
@@ -92,52 +113,52 @@ export async function seedDemoUsers() {
     const { data: allUsers } = await supabase.auth.admin.listUsers();
     const existingMap = Object.fromEntries((allUsers?.users || []).map(u => [u.email, u]));
 
-    for (const demo of DEMO_USERS) {
-      const existing = existingMap[demo.email];
+    for (const seedUser of seedUsers) {
+      const existing = existingMap[seedUser.email];
       if (existing) {
         const meta = existing.user_metadata || {};
-        if (!meta.role || meta.name !== demo.name) {
+        if (!meta.role || meta.name !== seedUser.name) {
           await supabase.auth.admin.updateUserById(existing.id, {
-            password: demo.password,
+            password: seedUser.password,
             email_confirm: true,
             user_metadata: {
-              name: demo.name,
-              role: demo.role,
-              counselor_id: demo.counselor_id,
-              branch: demo.branch
+              name: seedUser.name,
+              role: seedUser.role,
+              counselor_id: seedUser.counselor_id,
+              branch: seedUser.branch
             }
           });
-          console.log(`  [Supabase] Updated existing user: ${demo.email} (${demo.role})`);
+          console.log(`  [Supabase] Updated existing user: ${seedUser.email} (${seedUser.role})`);
         }
         continue;
       }
 
       await supabase.auth.admin.createUser({
-        email: demo.email,
-        password: demo.password,
+        email: seedUser.email,
+        password: seedUser.password,
         email_confirm: true,
         user_metadata: {
-          name: demo.name,
-          role: demo.role,
-          counselor_id: demo.counselor_id,
-          branch: demo.branch
+          name: seedUser.name,
+          role: seedUser.role,
+          counselor_id: seedUser.counselor_id,
+          branch: seedUser.branch
         }
       });
-      console.log(`  [Supabase] Seeded demo user: ${demo.email} (${demo.role})`);
+      console.log(`  [Supabase] Seeded configured user: ${seedUser.email} (${seedUser.role})`);
     }
   } catch (e) {
     console.warn('Supabase auth admin call failed, using legacy auth fallback:', e.message);
-    seedLegacyUsers();
+    seedLegacyUsers(seedUsers);
   }
 }
 
-function seedLegacyUsers() {
+function seedLegacyUsers(seedUsers = []) {
   const db = getDB();
   if (!db.users) db.users = [];
-  if (db.users.length > 0) return;
+  if (db.users.length > 0 || seedUsers.length === 0) return;
 
   const now = new Date().toISOString();
-  db.users = DEMO_USERS.map(u => ({
+  db.users = seedUsers.map(u => ({
     id: generateId(),
     name: u.name,
     email: u.email,

@@ -1,7 +1,6 @@
 // ===== Application data: JSON fallback or Supabase =====
 import {
   USE_SUPABASE,
-  REAL_DATA_MODE,
   getServerSupabase,
   createActivity,
   getCourse,
@@ -94,86 +93,6 @@ function jsonEnsureAdmissions() {
   if (!dbData.letter_templates) dbData.letter_templates = [];
   if (!dbData.offer_letters) dbData.offer_letters = [];
   if (!dbData.workflow_rules) dbData.workflow_rules = [];
-
-  if (REAL_DATA_MODE) {
-    saveDB(dbData);
-    return dbData;
-  }
-
-  if (dbData.workflow_rules.length === 0) {
-    dbData.workflow_rules.push({
-      id: 'wf-demo-001',
-      name: 'Send Offer Letter on Approval',
-      trigger: 'application_status_changed',
-      condition: 'status === "approved"',
-      action: 'send_offer_letter',
-      template_id: 'lt-demo-001',
-      active: true,
-      created_at: nowIso()
-    });
-  }
-
-  if (dbData.letter_templates.length === 0) {
-    dbData.letter_templates.push({
-      id: 'lt-demo-001',
-      name: 'Standard MBA Offer Letter',
-      content: '<h1>Offer of Admission</h1><p>Dear {{name}},</p><p>We are pleased to offer you admission to the <strong>{{course}}</strong> program at RBMI Bareilly for the academic year 2025-26.</p><p>Please complete your fee payment by {{due_date}} to confirm your seat.</p>',
-      variables: ['name', 'course', 'due_date'],
-      created_at: nowIso(),
-      updated_at: nowIso()
-    });
-  }
-
-  if (!dbData.applications.some(a => a.user_id === 'u004-student-demo')) {
-    dbData.applications.push({
-      id: 'app-demo-aarav',
-      user_id: 'u004-student-demo',
-      student_name: 'krishna jaiswal',
-      email: 'student@demo.in',
-      course_id: 'cr001-mba',
-      status: 'submitted',
-      documents_status: 'pending',
-      documents: normalizeDocuments([
-        { name: 'Class 10 marksheet', status: 'verified', file_name: 'class-10.pdf', uploaded_at: nowIso(), reviewed_at: nowIso() },
-        { name: 'ID proof', status: 'verified', file_name: 'aadhaar.pdf', uploaded_at: nowIso(), reviewed_at: nowIso() }
-      ]),
-      counselor_name: 'Neha Khan',
-      priority: 'high',
-      created_at: nowIso(),
-      updated_at: nowIso()
-    });
-  }
-  if (!dbData.queries.some(q => q.user_id === 'u004-student-demo')) {
-    dbData.queries.push({
-      id: 'qry-demo-aarav',
-      user_id: 'u004-student-demo',
-      student_name: 'krishna jaiswal',
-      subject: 'Document upload help',
-      category: 'Documents',
-      status: 'open',
-      priority: 'medium',
-      message: 'Need help uploading Class 12 marksheet.',
-      response: '',
-      created_at: nowIso(),
-      updated_at: nowIso()
-    });
-  }
-  if (!dbData.payments.some(p => p.user_id === 'u004-student-demo')) {
-    dbData.payments.push({
-      id: 'pay-demo-aarav',
-      user_id: 'u004-student-demo',
-      student_name: 'krishna jaiswal',
-      title: 'Admission confirmation fee',
-      amount: 25000,
-      status: 'due',
-      method: 'Online',
-      due_date: '2026-05-15',
-      receipt_no: '',
-      installments: buildInstallments(25000, 2, '2026-05-15'),
-      created_at: nowIso(),
-      updated_at: nowIso()
-    });
-  }
   saveDB(dbData);
   return dbData;
 }
@@ -960,4 +879,3 @@ export async function patchWorkflowRule(id, body) {
   saveDB(dbData);
   return dbData.workflow_rules[idx];
 }
-

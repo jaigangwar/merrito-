@@ -12,16 +12,6 @@ function ensureMarketingModules() {
   }
   let changed = false;
   const now = new Date().toISOString();
-  const leads = dbData.leads || [];
-  const lead = leads[0] || {
-    id: 'demo-student',
-    first_name: 'krishna',
-    last_name: 'jaiswal',
-    email: 'student@demo.in',
-    phone: '+91 90123 45678',
-    city: 'Bareilly'
-  };
-  const leadName = `${lead.first_name || 'Aarav'} ${lead.last_name || 'Mehta'}`.trim();
 
   if (!dbData.communicationIntegrations) {
     dbData.communicationIntegrations = {
