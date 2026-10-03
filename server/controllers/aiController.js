@@ -6,10 +6,10 @@ import { getDB } from '../db.js';
 const llmBaseUrl = process.env.LLM_BASE_URL || 'https://api.openai.com/v1';
 const apiKey = process.env.LLM_API_KEY || process.env.OPENAI_API_KEY || '';
 
-const openai = new OpenAI({
+const openai = (apiKey && apiKey.length >= 15) ? new OpenAI({
   apiKey: apiKey,
   baseURL: llmBaseUrl
-});
+}) : null;
 
 function getLastUserMessage(history = []) {
   if (!Array.isArray(history)) return '';

@@ -3,7 +3,7 @@
 (function () {
   'use strict';
 
-  var API_BASE = window.RBMI_API_URL || 'http://localhost:3001/api/chat';
+  var API_BASE = window.RBMI_API_URL || '/api/chat';
   var COLLEGE_NAME = window.RBMI_COLLEGE_NAME || 'RBMI';
   var WIDGET_COLOR = window.RBMI_WIDGET_COLOR || '#6366f1';
   var WIDGET_POSITION = window.RBMI_WIDGET_POSITION || 'right'; // 'right' | 'left'

@@ -262,18 +262,35 @@ export function showLogin({ onSuccess, onSignupClick }) {
     });
   });
 
+  // Show any pending OAuth errors (e.g. redirected back with error)
+  const pendingAuthError = sessionStorage.getItem('rbmi_auth_error');
+  if (pendingAuthError) {
+    sessionStorage.removeItem('rbmi_auth_error');
+    const err = document.getElementById('lerr');
+    if (err) {
+      err.textContent = '⚠ ' + pendingAuthError;
+      err.style.display = 'block';
+    }
+  }
+
   // Google login
-  document.getElementById('lgoogle')?.addEventListener('click', () => {
+  document.getElementById('lgoogle')?.addEventListener('click', async () => {
     const branch = document.getElementById('lbranch').value;
+    localStorage.setItem('rbmi_selected_branch', branch);
     const supabase = getSupabase();
     if (supabase) {
-      supabase.auth.signInWithOAuth({
+      const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/auth/callback?branch=${branch}`,
           queryParams: { access_type: 'offline', prompt: 'consent' }
         }
       });
+      if (error) {
+        const err = document.getElementById('lerr');
+        err.textContent = '⚠ ' + error.message;
+        err.style.display = 'block';
+      }
     } else {
       const err = document.getElementById('lerr');
       err.textContent = 'Google login needs Supabase credentials.';

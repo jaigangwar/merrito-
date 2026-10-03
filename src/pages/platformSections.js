@@ -889,11 +889,11 @@ export function renderMobileApp(el) {
 }
 
 function getWebhookUrl() {
-  return `${window.location.protocol}//${window.location.hostname}:3001/api/webhook/lead`;
+  return `${window.location.origin}/api/webhook/lead`;
 }
 
 function getPublisherUrl(name) {
-  return `${window.location.protocol}//${window.location.hostname}:3001/api/webhook/publisher/${name}`;
+  return `${window.location.origin}/api/webhook/publisher/${name}`;
 }
 
 export async function renderIntegrations(el) {

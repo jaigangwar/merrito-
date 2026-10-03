@@ -1,110 +1,650 @@
 {
-  "leads": [],
+  "leads": [
+    {
+      "id": "b78eb068-3630-4a77-8a1d-0fdaa176f2ba",
+      "first_name": "akanksha",
+      "last_name": "raghav",
+      "email": "cse24akanksha@rbmi.in",
+      "phone": "+918562383056",
+      "course_id": "cr004-mca",
+      "source": "Website Form",
+      "stage": "enquiry",
+      "counselor_id": "cr008-aaradhya",
+      "priority": "medium",
+      "city": "",
+      "notes": "",
+      "lead_score": 45,
+      "lead_strength": "nurture",
+      "verification_status": "verified",
+      "source_attribution": {
+        "primary": "Website Form",
+        "secondary": "Publisher API",
+        "tertiary": "First touch"
+      },
+      "raw_source_payload": {
+        "first_name": "akanksha",
+        "last_name": "raghav",
+        "email": "cse24akanksha@rbmi.in",
+        "phone": "+918562383056",
+        "city": "",
+        "course": "MCA",
+        "source": "Website Form"
+      },
+      "created_at": "2026-10-02T17:02:48.409Z",
+      "updated_at": "2026-10-02T17:02:48.409Z"
+    },
+    {
+      "id": "e3712fa8-3efd-47db-83ae-703bdf805ff1",
+      "first_name": "Krishna",
+      "last_name": "Jaiswal",
+      "email": "krishnajaiswal0984@gmail.com",
+      "phone": "+919359116569",
+      "course_id": "cr008-btech",
+      "source": "Website Form",
+      "stage": "enquiry",
+      "counselor_id": "cr008-aaradhya",
+      "priority": "medium",
+      "city": "Bareilly",
+      "notes": "",
+      "lead_score": 45,
+      "lead_strength": "nurture",
+      "verification_status": "verified",
+      "source_attribution": {
+        "primary": "Website Form",
+        "secondary": "Publisher API",
+        "tertiary": "First touch"
+      },
+      "raw_source_payload": {
+        "first_name": "Krishna",
+        "last_name": "Jaiswal",
+        "email": "krishnajaiswal0984@gmail.com",
+        "phone": "+919359116569",
+        "city": "Bareilly",
+        "course": "B.Tech AI & DS",
+        "source": "Website Form"
+      },
+      "created_at": "2026-10-02T15:59:11.383Z",
+      "updated_at": "2026-10-02T15:59:11.383Z"
+    },
+    {
+      "id": "476a86e0-fa4b-4416-901e-9dff65657f84",
+      "first_name": "Krishna",
+      "last_name": "Jaiswal",
+      "email": "krishnajaiswal0984@gmail.com",
+      "phone": "+919359116569",
+      "course_id": null,
+      "source": "Website Form",
+      "stage": "enquiry",
+      "counselor_id": null,
+      "priority": "medium",
+      "city": "Bareilly",
+      "notes": "",
+      "lead_score": 45,
+      "lead_strength": "nurture",
+      "verification_status": "verified",
+      "source_attribution": {
+        "primary": "Website Form",
+        "secondary": "Publisher API",
+        "tertiary": "First touch"
+      },
+      "raw_source_payload": {
+        "first_name": "Krishna",
+        "last_name": "Jaiswal",
+        "email": "krishnajaiswal0984@gmail.com",
+        "phone": "+919359116569",
+        "city": "Bareilly",
+        "course": "BCA",
+        "source": "Website Form"
+      },
+      "created_at": "2026-10-02T15:45:07.121Z",
+      "updated_at": "2026-10-02T15:45:07.121Z"
+    },
+    {
+      "id": "5e7f1978-8dc1-47e4-b861-a3fb9014f741",
+      "first_name": "jai",
+      "last_name": "gangwar",
+      "email": "krishnajaiswal0984@gmail.com",
+      "phone": "+919359116569",
+      "course_id": null,
+      "source": "Website Form",
+      "stage": "enquiry",
+      "counselor_id": null,
+      "priority": "medium",
+      "city": "Bareilly",
+      "notes": "",
+      "lead_score": 45,
+      "lead_strength": "nurture",
+      "verification_status": "verified",
+      "source_attribution": {
+        "primary": "Website Form",
+        "secondary": "Publisher API",
+        "tertiary": "First touch"
+      },
+      "raw_source_payload": {
+        "first_name": "jai",
+        "last_name": "gangwar",
+        "email": "krishnajaiswal0984@gmail.com",
+        "phone": "+919359116569",
+        "city": "Bareilly",
+        "course": "B.Tech AI & DS",
+        "source": "Website Form"
+      },
+      "created_at": "2026-10-02T15:18:12.714Z",
+      "updated_at": "2026-10-02T15:18:12.714Z"
+    }
+  ],
   "counselors": [],
   "courses": [],
-  "activities": [],
+  "activities": [
+    {
+      "id": "a9ee0905-5333-4fe2-9e7d-64165528f0cd",
+      "type": "task_added",
+      "lead_id": "b78eb068-3630-4a77-8a1d-0fdaa176f2ba",
+      "message": "Automation created follow-up: Call akanksha raghav",
+      "created_at": "2026-10-02T17:02:48.956Z"
+    },
+    {
+      "id": "77ffaad9-5b47-4e2d-9899-cb2f2a08759a",
+      "type": "lead_added",
+      "lead_id": "b78eb068-3630-4a77-8a1d-0fdaa176f2ba",
+      "message": "New lead akanksha raghav captured via Website Form and auto-assigned",
+      "created_at": "2026-10-02T17:02:48.593Z"
+    },
+    {
+      "id": "db018a64-e87c-4588-b612-9dbfc03065cc",
+      "type": "task_added",
+      "lead_id": "e3712fa8-3efd-47db-83ae-703bdf805ff1",
+      "message": "Automation created follow-up: Call Krishna Jaiswal",
+      "created_at": "2026-10-02T15:59:11.868Z"
+    },
+    {
+      "id": "074a9db4-ea36-4ca0-a7c7-9b98b09cbc5f",
+      "type": "lead_added",
+      "lead_id": "e3712fa8-3efd-47db-83ae-703bdf805ff1",
+      "message": "New lead Krishna Jaiswal captured via Website Form and auto-assigned",
+      "created_at": "2026-10-02T15:59:11.557Z"
+    },
+    {
+      "id": "0b84dd1f-ff9e-49cf-8dd2-1d2315ca5315",
+      "type": "task_added",
+      "lead_id": "476a86e0-fa4b-4416-901e-9dff65657f84",
+      "message": "Automation created follow-up: Call Krishna Jaiswal",
+      "created_at": "2026-10-02T15:45:07.641Z"
+    },
+    {
+      "id": "633cfa1c-dd76-4bcc-b878-7029fbdeb18e",
+      "type": "lead_added",
+      "lead_id": "476a86e0-fa4b-4416-901e-9dff65657f84",
+      "message": "New lead Krishna Jaiswal captured via Website Form",
+      "created_at": "2026-10-02T15:45:07.274Z"
+    },
+    {
+      "id": "ecd99e0d-7d44-4f2d-88db-4467af55af49",
+      "type": "task_added",
+      "lead_id": "dc09b454-2de7-4b07-8fef-b61a4f616cd4",
+      "message": "Automation created follow-up: Call Krishna Jaiswal",
+      "created_at": "2026-10-02T15:40:49.657Z"
+    },
+    {
+      "id": "9c17b2d3-3927-4224-bda2-4babf58c1aec",
+      "type": "lead_added",
+      "lead_id": "dc09b454-2de7-4b07-8fef-b61a4f616cd4",
+      "message": "New lead Krishna Jaiswal captured via Website Form",
+      "created_at": "2026-10-02T15:40:49.308Z"
+    },
+    {
+      "id": "2b92b020-3593-4db1-9d71-c8e81b27829e",
+      "type": "task_added",
+      "lead_id": "5e7f1978-8dc1-47e4-b861-a3fb9014f741",
+      "message": "Automation created follow-up: Call jai gangwar",
+      "created_at": "2026-10-02T15:18:13.258Z"
+    },
+    {
+      "id": "560f4ead-cae4-405b-bcce-7698f8bba6f3",
+      "type": "lead_added",
+      "lead_id": "5e7f1978-8dc1-47e4-b861-a3fb9014f741",
+      "message": "New lead jai gangwar captured via Website Form",
+      "created_at": "2026-10-02T15:18:12.875Z"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "3713ed87-f71c-4e45-813b-64d533d5a33c",
+      "title": "Call Krishna Jaiswal",
+      "lead_id": "476a86e0-fa4b-4416-901e-9dff65657f84",
+      "due_date": "2026-10-02T19:45:07.453Z",
+      "type": "call",
+      "status": "pending",
+      "notes": "New enquiry. Qualify course interest, budget, location, and admission timeline.",
+      "created_at": "2026-10-02T15:45:07.453Z",
+      "updated_at": "2026-10-02T15:45:07.453Z"
+    },
+    {
+      "id": "05ab090c-0dac-47f2-a347-36f554e219d6",
+      "title": "Call Krishna Jaiswal",
+      "lead_id": "dc09b454-2de7-4b07-8fef-b61a4f616cd4",
+      "due_date": "2026-10-02T19:40:49.489Z",
+      "type": "call",
+      "status": "pending",
+      "notes": "New enquiry. Qualify course interest, budget, location, and admission timeline.",
+      "created_at": "2026-10-02T15:40:49.490Z",
+      "updated_at": "2026-10-02T15:40:49.490Z"
+    },
+    {
+      "id": "8f978241-91ae-45b9-8e3d-120f0d95d2f7",
+      "title": "Call jai gangwar",
+      "lead_id": "5e7f1978-8dc1-47e4-b861-a3fb9014f741",
+      "due_date": "2026-10-02T19:18:13.056Z",
+      "type": "call",
+      "status": "pending",
+      "notes": "New enquiry. Qualify course interest, budget, location, and admission timeline.",
+      "created_at": "2026-10-02T15:18:13.057Z",
+      "updated_at": "2026-10-02T15:18:13.057Z"
+    }
+  ],
   "users": [
     {
-      "id": "u001-admin",
+      "id": "fcf7de78-b454-407d-9a26-51a1cbbb1c1e",
       "name": "Admin RBMI",
       "email": "admin@rbmi.edu.in",
-      "password": "admin123",
+      "password": "cb6ee811e8ffc9f6983394fe1eeda09d:e2e69194055a935ab02c0e7ea025ba9e49aa81d25f890362375d44f693551b57a84713a9bf12a8cc6c29248bbcc17b66243d0699fa3371667b640fa9c2a2d33d",
       "role": "admin",
       "counselor_id": null,
       "branch": "bareilly",
-      "created_at": "2026-01-01T00:00:00.000Z"
+      "created_at": "2026-10-02T14:37:42.130Z"
     },
     {
-      "id": "u002-priya",
-      "name": "Priya Sharma",
+      "id": "2810b758-c03f-4293-95a8-90220fed2fd0",
+      "name": "Neha Khan",
       "email": "priya@rbmi.edu.in",
-      "password": "counselor123",
+      "password": "74e76a496a362ab306a878f8b073953d:9888c8c886667d366fe56f78379d92517845c7657283b831df29fd58c1f643eb3ea59c5cb5683bb73b5823d33b9cada559d8d59a312fc90f89aa212192141cc5",
       "role": "counselor",
-      "counselor_id": "c001-rbmi-priya",
+      "counselor_id": null,
       "branch": "bareilly",
-      "created_at": "2026-01-01T00:00:00.000Z"
+      "created_at": "2026-10-02T14:37:42.130Z"
     },
     {
-      "id": "u003-rajesh",
+      "id": "40f3feb9-bceb-4321-adc0-f54045d2ab98",
       "name": "Rajesh Kumar",
       "email": "rajesh@rbmi.edu.in",
-      "password": "counselor123",
+      "password": "f86f6a0f6053a73425960eb978786344:04323c4b24026712c7447020a0501107a504cc1ee614dd3f300af5df53bf2b90dc46d210fd10023e352d48bd5645c31e32c32a1370659edd824662c17f6664bc",
       "role": "counselor",
-      "counselor_id": "c002-rbmi-rajesh",
+      "counselor_id": null,
       "branch": "bareilly",
-      "created_at": "2026-01-01T00:00:00.000Z"
+      "created_at": "2026-10-02T14:37:42.130Z"
     },
     {
-      "id": "u004-student-demo",
-      "name": "Aarav Mehta",
+      "id": "ba94da73-4428-4e3a-862a-b153372d7e67",
+      "name": "krishna jaiswal",
       "email": "student@demo.in",
-      "password": "student123",
+      "password": "257d7234b7da684ac9277e647f433603:8757fb56f924dbb1f0babbd52353654b22661decbd0dca4171697315a630b3b0a13f5d2f739e8282705e27cea4ef6022724a22e767fd51a86703fdeab7aee203",
       "role": "student",
       "counselor_id": null,
       "branch": "bareilly",
-      "created_at": "2026-05-02T10:24:13.829Z"
+      "created_at": "2026-10-02T14:37:42.130Z"
     }
   ],
-  "settings": {
-    "institute_name": "Rakshpal Bahadur Management Institute (RBMI)",
-    "short_name": "RBMI",
-    "email": "admissions@rbmi.edu.in",
-    "phone": "+91 581 250 0000",
-    "address": "Pilibhit Bypass Road, Bareilly, Uttar Pradesh - 243006",
-    "website": "https://www.rbmi.edu.in",
-    "academic_year": "2025-2026",
-    "city": "Bareilly",
-    "state": "Uttar Pradesh",
-    "branches": [
-      {
-        "id": "bareilly",
-        "name": "Bareilly Campus",
-        "address": "Pilibhit Bypass Road, Bareilly, UP - 243006",
-        "phone": "+91 581 250 0000"
-      },
-      {
-        "id": "greater_noida",
-        "name": "Greater Noida Campus",
-        "address": "Knowledge Park II, Greater Noida, UP - 201306",
-        "phone": "+91 120 250 0000"
-      }
-    ]
-  },
-  "portalProfiles": {
-    "u004-student-demo": {
-      "user_id": "u004-student-demo",
-      "name": "Aarav Mehta",
-      "email": "student@demo.in",
-      "phone": "",
-      "city": "",
-      "course_id": null,
-      "stage": "enquiry",
-      "counselor_name": "Admissions team",
-      "readiness": 35,
-      "next_step": "Complete your profile",
-      "fee_due": "0",
-      "scholarship": "Not reviewed yet",
-      "branch": "bareilly",
-      "updated_at": "2026-10-01T07:13:37.255Z"
+  "communicationIntegrations": {
+    "email": {
+      "enabled": true,
+      "provider": "SMTP relay",
+      "sender": "admissions@rbmi.edu.in"
+    },
+    "sms": {
+      "enabled": true,
+      "provider": "MSG91",
+      "sender": "RBMIAD"
+    },
+    "whatsapp": {
+      "enabled": true,
+      "provider": "WhatsApp Business Cloud",
+      "sender": "+91 581 250 0000"
+    },
+    "ivr": {
+      "enabled": true,
+      "provider": "Exotel",
+      "sender": "IVR Queue A"
+    },
+    "push": {
+      "enabled": true,
+      "provider": "Firebase Cloud Messaging",
+      "sender": "RBMI Hub App"
     }
   },
-  "applications": [],
-  "queries": [],
-  "payments": [],
-  "communicationIntegrations": {},
-  "communicationTemplates": [],
-  "communicationCampaigns": [],
-  "callLogs": [],
-  "autoFollowUps": [],
-  "broadcastMessages": [],
-  "studentInbox": [],
-  "chatThreads": [],
-  "notificationCenter": [],
-  "form_templates": [],
-  "campaigns": [],
-  "publishers": [],
-  "inboundLogs": [],
-  "letter_templates": [],
-  "offer_letters": [],
-  "workflow_rules": []
+  "communicationTemplates": [
+    {
+      "id": "69accc32-a7d5-44aa-900a-bdece86b661d",
+      "name": "Open House Invite",
+      "channel": "email",
+      "category": "campaign",
+      "subject": "Join RBMI open house this Saturday",
+      "content": "Hi {{name}}, visit {{campus}} this Saturday for our open house and course guidance session.",
+      "variables": [
+        "name",
+        "campus"
+      ],
+      "active": true,
+      "created_at": "2026-10-02T15:10:26.124Z",
+      "updated_at": "2026-10-02T15:10:26.124Z"
+    },
+    {
+      "id": "1ee91f91-3421-44b7-843c-e93a995ca793",
+      "name": "Callback Reminder",
+      "channel": "sms",
+      "category": "follow_up",
+      "subject": "",
+      "content": "Hi {{name}}, our counselor will call you today regarding {{course}} admission.",
+      "variables": [
+        "name",
+        "course"
+      ],
+      "active": true,
+      "created_at": "2026-10-02T15:10:26.124Z",
+      "updated_at": "2026-10-02T15:10:26.124Z"
+    },
+    {
+      "id": "0f09a7a3-5e1e-4475-8ea6-0a00d68e9eef",
+      "name": "Document Nudge",
+      "channel": "whatsapp",
+      "category": "drip",
+      "subject": "",
+      "content": "Hello {{name}}, please upload your pending documents to keep your admission moving.",
+      "variables": [
+        "name"
+      ],
+      "active": true,
+      "created_at": "2026-10-02T15:10:26.124Z",
+      "updated_at": "2026-10-02T15:10:26.124Z"
+    }
+  ],
+  "communicationCampaigns": [
+    {
+      "id": "f74006e3-f828-4fd0-916e-9e8a50a2e67d",
+      "name": "MBA Priority Outreach",
+      "channel": "email",
+      "category": "campaign",
+      "status": "draft",
+      "audience": "MBA prospects",
+      "audience_count": 1,
+      "template_id": "69accc32-a7d5-44aa-900a-bdece86b661d",
+      "subject": "Admissions guidance for MBA applicants",
+      "message": "Shortlist warm MBA leads for a counselor callback.",
+      "auto_followup": true,
+      "owner_id": "u001-admin",
+      "metrics": {
+        "delivered": 0,
+        "opened": 0,
+        "clicked": 0,
+        "replied": 0,
+        "failed": 0
+      },
+      "created_at": "2026-10-02T15:10:26.124Z",
+      "updated_at": "2026-10-02T15:10:26.124Z",
+      "sent_at": null
+    },
+    {
+      "id": "ead38b6f-f744-4e22-ba50-a5adaf4cf527",
+      "name": "Application Deadline SMS",
+      "channel": "sms",
+      "category": "broadcast",
+      "status": "scheduled",
+      "audience": "All active leads",
+      "audience_count": 1,
+      "template_id": "1ee91f91-3421-44b7-843c-e93a995ca793",
+      "subject": "",
+      "message": "Send deadline reminders for pending applicants.",
+      "auto_followup": false,
+      "owner_id": "u001-admin",
+      "metrics": {
+        "delivered": 0,
+        "opened": 0,
+        "clicked": 0,
+        "replied": 0,
+        "failed": 0
+      },
+      "created_at": "2026-10-02T15:10:26.124Z",
+      "updated_at": "2026-10-02T15:10:26.124Z",
+      "sent_at": null
+    },
+    {
+      "id": "e1b4901d-a347-4cb3-9ffb-58141db84fcd",
+      "name": "Document Completion Drip",
+      "channel": "whatsapp",
+      "category": "drip",
+      "status": "active",
+      "audience": "Document pending students",
+      "audience_count": 1,
+      "template_id": "0f09a7a3-5e1e-4475-8ea6-0a00d68e9eef",
+      "subject": "",
+      "message": "Automated nudges for pending document uploads.",
+      "auto_followup": true,
+      "owner_id": "u001-admin",
+      "metrics": {
+        "delivered": 12,
+        "opened": 10,
+        "clicked": 6,
+        "replied": 4,
+        "failed": 1
+      },
+      "created_at": "2026-10-02T15:10:26.124Z",
+      "updated_at": "2026-10-02T15:10:26.124Z",
+      "sent_at": "2026-10-02T15:10:26.124Z"
+    }
+  ],
+  "callLogs": [
+    {
+      "id": "c3b1b141-f5ca-4271-818e-03f735b7f7e5",
+      "student_name": "krishna jaiswal",
+      "phone": "+91 90123 45678",
+      "direction": "outbound",
+      "provider": "Exotel",
+      "duration_seconds": 412,
+      "recording_url": "https://recordings.rbmi.local/call-demo-001",
+      "summary": "Discussed MBA admission process and scheduled callback.",
+      "status": "completed",
+      "created_at": "2026-10-02T15:10:26.124Z"
+    }
+  ],
+  "autoFollowUps": [
+    {
+      "id": "a207a024-e470-4fb9-a857-c7e759fd4d00",
+      "title": "No response in 24 hours",
+      "trigger": "lead_created",
+      "channel": "sms",
+      "delay_hours": 24,
+      "status": "active",
+      "template_id": "1ee91f91-3421-44b7-843c-e93a995ca793",
+      "created_at": "2026-10-02T15:10:26.124Z",
+      "updated_at": "2026-10-02T15:10:26.124Z"
+    }
+  ],
+  "broadcastMessages": [
+    {
+      "id": "4b1239e5-52e6-493c-99b2-90261a214a34",
+      "title": "Scholarship Webinar Alert",
+      "channel": "whatsapp",
+      "audience": "All scholarship leads",
+      "message": "Scholarship webinar starts at 5 PM. Join using the portal link.",
+      "status": "sent",
+      "metrics": {
+        "reached": 1,
+        "engaged": 1
+      },
+      "created_at": "2026-10-02T15:10:26.124Z",
+      "updated_at": "2026-10-02T15:10:26.124Z"
+    }
+  ],
+  "studentInbox": [
+    {
+      "id": "70a6a0f4-5253-43fd-b525-7523585a0a5a",
+      "student_name": "krishna jaiswal",
+      "channel": "email",
+      "subject": "Admission help required",
+      "message": "Can I switch from BBA to MBA after counseling?",
+      "status": "open",
+      "priority": "high",
+      "created_at": "2026-10-02T15:10:26.124Z",
+      "updated_at": "2026-10-02T15:10:26.124Z"
+    }
+  ],
+  "chatThreads": [
+    {
+      "id": "57dec710-aac3-418a-a381-292fc939dd14",
+      "student_name": "krishna jaiswal",
+      "counselor_name": "Neha Khan",
+      "status": "active",
+      "last_message_at": "2026-10-02T15:10:26.124Z",
+      "messages": [
+        {
+          "id": "839814e1-c4db-470b-9ec0-0d9cabfb2759",
+          "sender": "student",
+          "text": "Hello, I need the fee structure for MBA.",
+          "created_at": "2026-10-02T15:10:26.124Z"
+        },
+        {
+          "id": "7d5cdae9-c517-4c12-9ab9-b5e7d77e6bce",
+          "sender": "counselor",
+          "text": "Sharing the updated fee structure and scholarship slab now.",
+          "created_at": "2026-10-02T15:10:26.124Z"
+        }
+      ]
+    }
+  ],
+  "notificationCenter": [
+    {
+      "id": "00205a87-f747-489e-bef2-cb6175a7d6e1",
+      "title": "Broadcast delivered",
+      "message": "Scholarship webinar broadcast reached active leads.",
+      "channel": "push",
+      "target_type": "marketing",
+      "status": "unread",
+      "created_at": "2026-10-02T15:10:26.124Z"
+    },
+    {
+      "id": "e3c6c74b-6222-4e28-9fa5-2e0b8863b33d",
+      "title": "Inbox waiting",
+      "message": "krishna jaiswal is waiting for a counselor response.",
+      "channel": "email",
+      "target_type": "student_inbox",
+      "status": "unread",
+      "created_at": "2026-10-02T15:10:26.124Z"
+    }
+  ],
+  "inboundLogs": [
+    {
+      "id": "418a1383-e1ad-4e92-9593-a1f9770fba32",
+      "publisher": "Website Form",
+      "source": "Website Form",
+      "student_name": "prashant gangwar",
+      "status": "captured",
+      "lead_id": "d8ed8f40-fe24-4a9c-8f50-934f2cf016ba",
+      "reason": "",
+      "payload": {
+        "first_name": "prashant",
+        "last_name": "gangwar",
+        "email": "cse24prashant@rbmi.in",
+        "phone": "+915678963612",
+        "city": "",
+        "course": "MCA",
+        "source": "Website Form"
+      },
+      "received_at": "2026-10-02T17:55:19.315Z"
+    },
+    {
+      "id": "f059ac8f-a094-4cdc-aaa0-017795f32821",
+      "publisher": "Website Form",
+      "source": "Website Form",
+      "student_name": "akanksha raghav",
+      "status": "captured",
+      "lead_id": "b78eb068-3630-4a77-8a1d-0fdaa176f2ba",
+      "reason": "",
+      "payload": {
+        "first_name": "akanksha",
+        "last_name": "raghav",
+        "email": "cse24akanksha@rbmi.in",
+        "phone": "+918562383056",
+        "city": "",
+        "course": "MCA",
+        "source": "Website Form"
+      },
+      "received_at": "2026-10-02T17:02:49.128Z"
+    },
+    {
+      "id": "72221755-b051-4745-b9ba-9c91f1433fc7",
+      "publisher": "Website Form",
+      "source": "Website Form",
+      "student_name": "Krishna Jaiswal",
+      "status": "captured",
+      "lead_id": "e3712fa8-3efd-47db-83ae-703bdf805ff1",
+      "reason": "",
+      "payload": {
+        "first_name": "Krishna",
+        "last_name": "Jaiswal",
+        "email": "krishnajaiswal0984@gmail.com",
+        "phone": "+919359116569",
+        "city": "Bareilly",
+        "course": "B.Tech AI & DS",
+        "source": "Website Form"
+      },
+      "received_at": "2026-10-02T15:59:12.055Z"
+    },
+    {
+      "id": "a054affc-b9a9-433d-a2d3-565f9362384e",
+      "publisher": "Website Form",
+      "source": "Website Form",
+      "student_name": "Krishna Jaiswal",
+      "status": "captured",
+      "lead_id": "476a86e0-fa4b-4416-901e-9dff65657f84",
+      "reason": "",
+      "payload": {
+        "first_name": "Krishna",
+        "last_name": "Jaiswal",
+        "email": "krishnajaiswal0984@gmail.com",
+        "phone": "+919359116569",
+        "city": "Bareilly",
+        "course": "BCA",
+        "source": "Website Form"
+      },
+      "received_at": "2026-10-02T15:45:07.940Z"
+    },
+    {
+      "id": "ded1aba6-ccc2-43fd-bcd5-5ecfe7bde9e5",
+      "publisher": "Website Form",
+      "source": "Website Form",
+      "student_name": "Krishna Jaiswal",
+      "status": "captured",
+      "lead_id": "dc09b454-2de7-4b07-8fef-b61a4f616cd4",
+      "reason": "",
+      "payload": {
+        "first_name": "Krishna",
+        "last_name": "Jaiswal",
+        "email": "krishnajaiswal0984@gmail.com",
+        "phone": "+919359116569",
+        "city": "Bareilly",
+        "course": "B.Tech AI & DS",
+        "source": "Website Form"
+      },
+      "received_at": "2026-10-02T15:40:49.841Z"
+    },
+    {
+      "id": "50755bae-d143-4420-a428-dae0356c464d",
+      "publisher": "Website Form",
+      "source": "Website Form",
+      "student_name": "jai gangwar",
+      "status": "captured",
+      "lead_id": "5e7f1978-8dc1-47e4-b861-a3fb9014f741",
+      "reason": "",
+      "payload": {
+        "first_name": "jai",
+        "last_name": "gangwar",
+        "email": "krishnajaiswal0984@gmail.com",
+        "phone": "+919359116569",
+        "city": "Bareilly",
+        "course": "B.Tech AI & DS",
+        "source": "Website Form"
+      },
+      "received_at": "2026-10-02T15:18:13.409Z"
+    }
+  ],
+  "publishers": []
 }

@@ -31,7 +31,9 @@ export async function renderStudentQualityIndex(container) {
       fetchLeads({ limit: 500 }).catch(() => ({ leads: [] }))
     ]);
 
-    const leads = leadsData.leads || leadsData || [];
+    const leads = Array.isArray(leadsData)
+      ? leadsData
+      : (leadsData?.data || leadsData?.leads || []);
 
     // --- Compute age distribution from leads ---
     const ageGroups = { '16 Yrs': { male: 0, female: 0 }, '17 Yrs': { male: 0, female: 0 }, '18 Yrs': { male: 0, female: 0 }, '19 Yrs': { male: 0, female: 0 }, '20 Yrs': { male: 0, female: 0 } };
@@ -40,45 +42,38 @@ export async function renderStudentQualityIndex(container) {
     if (leads.length > 0) {
       leads.forEach(lead => {
         const gender = (lead.gender || '').toLowerCase();
+        const genderKey = gender === 'male' || gender === 'm'
+          ? 'male'
+          : gender === 'female' || gender === 'f' ? 'female' : null;
         const age = lead.age ? Number(lead.age) : null;
 
-        if (gender === 'male' || gender === 'm') maleCount++;
-        else if (gender === 'female' || gender === 'f') femaleCount++;
+        if (genderKey === 'male') maleCount++;
+        else if (genderKey === 'female') femaleCount++;
 
         if (age) {
           totalAge += age;
           ageCount++;
-          if (age <= 16) { ageGroups['16 Yrs'][gender === 'female' || gender === 'f' ? 'female' : 'male']++; }
-          else if (age === 17) { ageGroups['17 Yrs'][gender === 'female' || gender === 'f' ? 'female' : 'male']++; }
-          else if (age === 18) { ageGroups['18 Yrs'][gender === 'female' || gender === 'f' ? 'female' : 'male']++; }
-          else if (age === 19) { ageGroups['19 Yrs'][gender === 'female' || gender === 'f' ? 'female' : 'male']++; }
-          else { ageGroups['20 Yrs'][gender === 'female' || gender === 'f' ? 'female' : 'male']++; }
+          if (genderKey) {
+            if (age <= 16) ageGroups['16 Yrs'][genderKey]++;
+            else if (age === 17) ageGroups['17 Yrs'][genderKey]++;
+            else if (age === 18) ageGroups['18 Yrs'][genderKey]++;
+            else if (age === 19) ageGroups['19 Yrs'][genderKey]++;
+            else ageGroups['20 Yrs'][genderKey]++;
+          }
         }
       });
     }
 
-    // Fallback demo data if no leads have age/gender
-    if (maleCount === 0 && femaleCount === 0) {
-      maleCount = Math.round((stats.totalLeads || 30) * 0.6);
-      femaleCount = (stats.totalLeads || 30) - maleCount;
-      ageGroups['16 Yrs'] = { male: 2, female: 1 };
-      ageGroups['17 Yrs'] = { male: 5, female: 4 };
-      ageGroups['18 Yrs'] = { male: 8, female: 6 };
-      ageGroups['19 Yrs'] = { male: 4, female: 3 };
-      ageGroups['20 Yrs'] = { male: 3, female: 2 };
-      totalAge = 18 * (stats.totalLeads || 30);
-      ageCount = stats.totalLeads || 30;
-    }
-
-    const avgAge = ageCount > 0 ? Math.round(totalAge / ageCount) : 19;
-    const malePercent = (maleCount + femaleCount) > 0 ? Math.round((maleCount / (maleCount + femaleCount)) * 100) : 60;
-    const femalePercent = 100 - malePercent;
+    const avgAge = ageCount > 0 ? Math.round(totalAge / ageCount) : 0;
+    const genderTotal = maleCount + femaleCount;
+    const malePercent = genderTotal > 0 ? Math.round((maleCount / genderTotal) * 100) : 0;
+    const femalePercent = genderTotal > 0 ? 100 - malePercent : 0;
 
     // GCD for ratio
     function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }
-    const g = gcd(maleCount || 3, femaleCount || 2);
-    const ratioM = (maleCount || 3) / (g || 1);
-    const ratioF = (femaleCount || 2) / (g || 1);
+    const g = genderTotal > 0 ? gcd(maleCount, femaleCount) : 1;
+    const ratioM = genderTotal > 0 ? maleCount / g : '—';
+    const ratioF = genderTotal > 0 ? femaleCount / g : '—';
 
     // Source inflow
     const sourceData = stats.sourceDistribution || {};
@@ -127,7 +122,7 @@ export async function renderStudentQualityIndex(container) {
             </div>
             <div class="sqi-insight-box">
               <h4 class="sqi-insight-heading">Insight</h4>
-              <p class="sqi-insight-text">1. Average age of your Applicants is <strong>${avgAge} years</strong>.</p>
+              <p class="sqi-insight-text">1. Average age of your Applicants is <strong>${avgAge || '—'}${avgAge ? ' years' : ''}</strong>.</p>
             </div>
           </div>
 
@@ -194,7 +189,7 @@ export async function renderStudentQualityIndex(container) {
             <div class="sqi-kpi-card">
               <div class="sqi-kpi-icon" style="background:rgba(239,68,68,0.1);color:#ef4444;"><i data-lucide="clock"></i></div>
               <div class="sqi-kpi-content">
-                <span class="sqi-kpi-value">${avgAge} yrs</span>
+                <span class="sqi-kpi-value">${avgAge ? `${avgAge} yrs` : '—'}</span>
                 <span class="sqi-kpi-label">Avg. Age</span>
               </div>
             </div>

@@ -269,6 +269,55 @@ export async function loginWithSupabaseAccessToken(accessToken) {
       branch: branch
     };
 
+    // Google OAuth can create a brand-new Supabase Auth user without the
+    // database trigger/profile rows (the project migration may have disabled
+    // that trigger during seeding). Provision the default student records on
+    // first SSO login so the user can enter the student portal immediately.
+    try {
+      const { error: profileError } = await supabase.from('profiles').upsert({
+        id: user.id,
+        email: email || '',
+        full_name: name,
+        role: payload.role,
+        counselor_id: counselor_id,
+        branch: branch,
+        phone: user.user_metadata?.phone || '',
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'id' });
+      if (profileError) throw profileError;
+
+      const { data: portalProfile, error: portalLookupError } = await supabase
+        .from('portal_profiles')
+        .select('user_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (portalLookupError) throw portalLookupError;
+
+      if (!portalProfile) {
+        const { error: portalInsertError } = await supabase.from('portal_profiles').insert([{
+          user_id: user.id,
+          name,
+          email: email || '',
+          phone: user.user_metadata?.phone || '',
+          city: '',
+          course_id: null,
+          stage: 'enquiry',
+          counselor_name: 'Admissions team',
+          readiness: 35,
+          next_step: 'Complete your profile',
+          fee_due: '0',
+          scholarship: 'Not reviewed yet',
+          branch,
+          updated_at: new Date().toISOString()
+        }]);
+        if (portalInsertError) throw portalInsertError;
+      }
+    } catch (provisionError) {
+      // Authentication can still complete if an optional profile write fails;
+      // the portal service also attempts lazy profile creation on first load.
+      console.warn('Could not provision SSO student profile:', provisionError.message);
+    }
+
     const token = signToken(payload);
     return { user: payload, token };
   } catch (err) {

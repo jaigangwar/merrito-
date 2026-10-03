@@ -35,12 +35,16 @@ function readDB() {
 }
 
 function writeDB(data) {
+  const tempPath = `${DB_PATH}.${process.pid}.${Date.now()}.tmp`;
   try {
-    fs.writeFile(DB_PATH, JSON.stringify(data, null, 2), 'utf-8', (err) => {
-      if (err) console.error('Error writing DB:', err.message);
-    });
+    // Write to a temporary file and replace the database atomically. A direct
+    // write truncates data.json first, so a concurrent server start can read
+    // half-written JSON and fall back to an empty database.
+    fs.writeFileSync(tempPath, JSON.stringify(data, null, 2), 'utf-8');
+    fs.renameSync(tempPath, DB_PATH);
   } catch (e) {
     console.error('Error writing DB:', e.message);
+    try { if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath); } catch {}
   }
 }
 

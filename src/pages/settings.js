@@ -469,7 +469,7 @@ function renderStagesTab() {
 }
 
 function renderWebhookTab() {
-  const apiBase = (import.meta.env.VITE_API_URL || `${window.location.protocol}//${window.location.hostname}:3001/api`).replace(/\/$/, '');
+  const apiBase = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '');
   const webhookUrl = `${apiBase}/webhook/lead`;
   const examplePayload = JSON.stringify({
     name: "Rahul Sharma",
@@ -569,7 +569,7 @@ document.addEventListener('click', async (e) => {
   btn.textContent = 'Sending...';
   result.textContent = '';
   try {
-    const apiBase = (import.meta.env.VITE_API_URL || `${window.location.protocol}//${window.location.hostname}:3001/api`).replace(/\/$/, '');
+    const apiBase = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '');
     const res = await fetch(`${apiBase}/webhook/lead`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

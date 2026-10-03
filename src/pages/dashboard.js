@@ -108,7 +108,6 @@ export async function renderDashboard(container) {
               <span class="kpi-value">${stats.totalLeads}</span>
               <span class="kpi-label">Total Leads</span>
             </div>
-            <div class="kpi-trend trend-up"><i data-lucide="trending-up"></i><span>+12.5%</span></div>
           </div>
           <div class="kpi-card animate-fade-in stagger-2" id="kpi-active-apps">
             <div class="kpi-icon" style="background: var(--color-info-light); color: var(--color-info);">
@@ -118,7 +117,6 @@ export async function renderDashboard(container) {
               <span class="kpi-value">${stats.activeApplications}</span>
               <span class="kpi-label">Active Applications</span>
             </div>
-            <div class="kpi-trend trend-up"><i data-lucide="trending-up"></i><span>+8.3%</span></div>
           </div>
           <div class="kpi-card animate-fade-in stagger-3" id="kpi-admissions">
             <div class="kpi-icon" style="background: var(--color-success-light); color: var(--color-success);">
@@ -128,7 +126,6 @@ export async function renderDashboard(container) {
               <span class="kpi-value">${stats.admissions}</span>
               <span class="kpi-label">Admissions</span>
             </div>
-            <div class="kpi-trend trend-up"><i data-lucide="trending-up"></i><span>+18.2%</span></div>
           </div>
           <div class="kpi-card animate-fade-in stagger-4" id="kpi-conversion">
             <div class="kpi-icon" style="background: var(--color-warning-light); color: var(--color-warning);">
@@ -138,7 +135,6 @@ export async function renderDashboard(container) {
               <span class="kpi-value">${stats.conversionRate}%</span>
               <span class="kpi-label">Conversion Rate</span>
             </div>
-            <div class="kpi-trend trend-up"><i data-lucide="trending-up"></i><span>+4.1%</span></div>
           </div>
         </div>
 

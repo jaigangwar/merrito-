@@ -139,25 +139,49 @@ function saveSession(payload, branch) {
 async function handleAuthCallback() {
   const hashParams = new URLSearchParams(window.location.hash.slice(1));
   const searchParams = new URLSearchParams(window.location.search);
+
+  // Check for OAuth error responses from provider or Supabase
+  const authError = searchParams.get('error_description') || searchParams.get('error') || hashParams.get('error_description') || hashParams.get('error');
+  if (authError) {
+    console.error('Auth callback received error:', authError);
+    sessionStorage.setItem('rbmi_auth_error', authError);
+    return false;
+  }
+
   const hasToken = hashParams.has('access_token') || searchParams.has('code');
   if (!hasToken) return false;
 
   try {
     const supabase = getSupabase();
     if (supabase) {
+      // Google OAuth uses the PKCE `code` flow on hosted deployments. Make
+      // the exchange explicit before reading the session; otherwise a new
+      // Google user can arrive at the callback with no client session yet.
+      const oauthCode = searchParams.get('code');
+      if (oauthCode) {
+        const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(oauthCode);
+        if (exchangeError) throw exchangeError;
+      }
+
       const { data, error } = await supabase.auth.getSession();
       if (error) throw error;
 
       if (data?.session?.access_token) {
         const urlParams = new URLSearchParams(window.location.search);
-        const branch = urlParams.get('branch') || 'bareilly';
+        const branch = urlParams.get('branch') || localStorage.getItem('rbmi_selected_branch') || 'bareilly';
 
         const res = await fetch(`${API_BASE}/auth/supabase`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ access_token: data.session.access_token })
         });
-        const payload = await res.json();
+        const responseText = await res.text();
+        let payload;
+        try {
+          payload = JSON.parse(responseText);
+        } catch {
+          payload = { error: responseText || `Authentication request failed (${res.status})` };
+        }
         if (!res.ok) throw new Error(payload.error || 'Authentication failed');
 
         saveSession(payload, branch);
@@ -177,6 +201,7 @@ async function handleAuthCallback() {
     }
   } catch (err) {
     console.error('Auth callback error:', err);
+    sessionStorage.setItem('rbmi_auth_error', err.message || 'Authentication failed');
   }
   return false;
 }

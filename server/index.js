@@ -100,8 +100,27 @@ function requireWebhookSecret(req, res, next) {
   const expected = process.env.WEBHOOK_SECRET;
   if (!expected) return next();
   const provided = req.headers['x-webhook-secret'] || req.query.secret;
-  if (provided !== expected) return res.status(401).json({ error: 'Invalid webhook secret' });
-  next();
+  if (provided === expected || isTrustedPublicFormRequest(req)) return next();
+  return res.status(401).json({ error: 'Invalid webhook secret' });
+}
+
+// The public registration form cannot safely contain WEBHOOK_SECRET. Allow
+// same-origin browser submissions while keeping the secret requirement for
+// server-to-server webhook clients that do not send a trusted Origin header.
+function isTrustedPublicFormRequest(req) {
+  const origin = req.headers.origin;
+  const requestHost = req.headers.host;
+  if (!origin || !requestHost) return false;
+
+  try {
+    const originUrl = new URL(origin);
+    if (originUrl.host === requestHost) return true;
+
+    const localHosts = new Set(['localhost', '127.0.0.1', '[::1]']);
+    return localHosts.has(originUrl.hostname) && localHosts.has(req.hostname);
+  } catch {
+    return false;
+  }
 }
 
 // --- LEAD SCORING LOGIC ---

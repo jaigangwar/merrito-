@@ -46,6 +46,9 @@
     @keyframes spin { to { transform: rotate(360deg); } }
 
     .success-container { display: none; text-align: center; padding: 10px; }
+    #success-container { display: none; }
+    /* The outer success card is shown after submission; keep its content visible too. */
+    #success-container .success-container { display: block; }
     .success-icon { width: 72px; height: 72px; background: linear-gradient(135deg, #059669, #10b981); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 32px; color: #fff; box-shadow: 0 12px 32px -8px rgba(5,150,105,0.3); }
     .success-container h2 { font-size: 24px; font-weight: 800; color: #059669; margin-bottom: 8px; }
     .success-container p { color: var(--text-muted); line-height: 1.7; font-size: 14px; margin-bottom: 8px; }
@@ -270,7 +273,13 @@
           successContainer.style.display = 'block';
           window.scrollTo({ top: 0, behavior: 'smooth' });
         } else {
-          const err = await response.json();
+          const responseText = await response.text();
+          let err;
+          try {
+            err = JSON.parse(responseText);
+          } catch {
+            err = { error: responseText || `Request failed (${response.status})` };
+          }
           if (err.duplicate) {
             formAlert.className = 'alert info';
             formAlert.textContent = 'You have already applied! Our team will contact you shortly.';

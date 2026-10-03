@@ -9,8 +9,11 @@ const __dirname = path.dirname(__filename);
 
 dotenv.config({ path: path.resolve(__dirname, '../.env'), override: true });
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY
+  || process.env.SUPABASE_PUBLISHABLE_KEY
+  || process.env.VITE_SUPABASE_ANON_KEY;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
+  || process.env.SUPABASE_SECRET_KEY;
 const SUPABASE_KEY = SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
 export const USE_SUPABASE = Boolean(
   SUPABASE_URL &&
@@ -38,7 +41,10 @@ let supabaseOffline = false;
 async function fetchWithTimeout(input, init = {}) {
   if (supabaseOffline) throw new Error('Supabase unavailable; using local JSON database');
   const controller = new AbortController();
-  const timeoutMs = Number(process.env.SUPABASE_TIMEOUT_MS) || 5000;
+  // Supabase may take longer during startup when several background sync
+  // requests are opened at once. Avoid treating a single slow request as a
+  // permanent outage for the rest of the server process.
+  const timeoutMs = Number(process.env.SUPABASE_TIMEOUT_MS) || 15000;
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   if (init.signal) {
     if (init.signal.aborted) controller.abort();
@@ -47,10 +53,9 @@ async function fetchWithTimeout(input, init = {}) {
   try {
     return await fetch(input, { ...init, signal: controller.signal });
   } catch (error) {
-    // DNS/network failures are deterministic for the lifetime of this
-    // process. Mark the remote store offline so every feature immediately
-    // uses the local database rather than retrying on every request.
-    supabaseOffline = true;
+    // A timeout can be transient (especially during startup). Do not turn a
+    // single timed-out request into a permanent local-database fallback.
+    if (error?.name !== 'AbortError') supabaseOffline = true;
     throw error;
   } finally {
     clearTimeout(timer);
@@ -174,7 +179,11 @@ export async function createLead(leadData) {
       });
       if (data && data[0]) return data[0];
     } catch (e) {
-      console.warn('Supabase lead insert failed, falling back to local JSON:', e.message);
+      // Do not silently split lead data between Supabase and server/data.json.
+      // A successful HTTP response from the registration form must mean the
+      // lead was actually written to the configured primary database.
+      console.error('Supabase lead insert failed:', e.message, e.details || '');
+      throw e;
     }
   }
 
