@@ -134,25 +134,39 @@ export async function seedDemoUsers() {
 function seedLegacyUsers() {
   const db = getDB();
   if (!db.users) db.users = [];
-  if (db.users.length > 0) return;
-
   const now = new Date().toISOString();
-  db.users = DEMO_USERS.map(u => ({
-    id: generateId(),
-    name: u.name,
-    email: u.email,
-    password: hashPassword(u.password),
-    role: u.role,
-    counselor_id: u.counselor_id,
-    branch: u.branch,
-    created_at: now
-  }));
+  for (const demo of DEMO_USERS) {
+    const existing = db.users.find(u =>
+      String(u.email || '').toLowerCase() === demo.email.toLowerCase()
+    );
+    if (!existing) {
+      db.users.push({
+        id: generateId(),
+        name: demo.name,
+        email: demo.email,
+        password: hashPassword(demo.password),
+        role: demo.role,
+        counselor_id: demo.counselor_id,
+        branch: demo.branch,
+        created_at: now
+      });
+    } else {
+      existing.name = existing.name || demo.name;
+      existing.role = existing.role || demo.role;
+      existing.counselor_id = existing.counselor_id ?? demo.counselor_id;
+      existing.branch = existing.branch || demo.branch;
+      if (process.env.SEED_DEMO_USERS === 'true' || !USE_SUPABASE) {
+        existing.password = hashPassword(demo.password);
+      }
+    }
+  }
   saveDB(db);
 }
 
 
 // ===== LOGIN (Supabase email/password or legacy JSON) =====
 export async function loginUser(email, password, branch) {
+  email = String(email || '').trim();
   if (USE_SUPABASE) {
     try {
       const supabase = getServerSupabase();

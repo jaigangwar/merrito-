@@ -315,7 +315,13 @@ export function showLogin({ onSuccess, onSignupClick }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password: pass, branch })
       });
-      const payload = await res.json();
+      const responseText = await res.text();
+      let payload;
+      try {
+        payload = JSON.parse(responseText);
+      } catch {
+        payload = { error: 'Login service is unavailable. Please try again.' };
+      }
       if (!res.ok) throw new Error(payload.error || 'Invalid credentials');
       onSuccess(payload, branch);
       root.classList.remove('show');
@@ -567,7 +573,13 @@ export function showSignup({ onSuccess, onLoginClick }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password: pass, name, phone, branch })
       });
-      const payload = await res.json();
+      const responseText = await res.text();
+      let payload;
+      try {
+        payload = JSON.parse(responseText);
+      } catch {
+        payload = { error: 'Signup service is unavailable. Please try again.' };
+      }
       if (!res.ok) throw new Error(payload.error || 'Signup failed');
       onSuccess(payload, branch);
       root.classList.remove('show');

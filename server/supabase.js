@@ -8,10 +8,16 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 dotenv.config({ path: path.resolve(__dirname, '../.env'), override: true });
-const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+const DEFAULT_SUPABASE_URL = 'https://jdwbkvphqshcsuiqqugg.supabase.co';
+const DEFAULT_SUPABASE_ANON_KEY = 'sb_publishable_ZwkQI-3TLHCzrBQY8JJKBQ_udi5CZ2S';
+
+const SUPABASE_URL = process.env.SUPABASE_URL
+  || process.env.VITE_SUPABASE_URL
+  || DEFAULT_SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY
   || process.env.SUPABASE_PUBLISHABLE_KEY
-  || process.env.VITE_SUPABASE_ANON_KEY;
+  || process.env.VITE_SUPABASE_ANON_KEY
+  || DEFAULT_SUPABASE_ANON_KEY;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
   || process.env.SUPABASE_SECRET_KEY;
 const SUPABASE_KEY = SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
